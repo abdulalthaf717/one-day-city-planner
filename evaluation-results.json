@@ -1,0 +1,680 @@
+{
+  "summary": {
+    "totalScenarios": 20,
+    "passedScenarios": 20,
+    "failedScenarios": 0,
+    "constraintSuccessRate": 100,
+    "deadlineComplianceRate": 100,
+    "budgetComplianceRate": 100,
+    "openingHoursComplianceRate": 100,
+    "routeFeasibilityRate": 100,
+    "replanningSuccessRate": 100,
+    "imageVerificationSuccessRate": 100,
+    "imageAddToTripSuccessRate": 100,
+    "noFabricationRate": 100,
+    "deterministicReproducibilityRate": 100,
+    "touristAttractionRatio": 86.4,
+    "foodStopRatio": 13.6,
+    "religiousLocalStopRatio": 0,
+    "genericLocalPlaceRatio": 0,
+    "averageOptimizerLatencyMs": 0.2,
+    "averagePlannerLatencyMs": 310.5,
+    "averageApiCallsPerPlan": 2.1
+  },
+  "scenarios": [
+    {
+      "scenarioId": "SCENARIO_01",
+      "scenarioName": "Standard Heritage Tour (Full Window)",
+      "category": "STANDARD",
+      "passed": true,
+      "isFeasible": true,
+      "actualArrival": "13:57",
+      "latestAllowedArrival": "18:30",
+      "deadlineCompliant": true,
+      "totalCost": 400,
+      "budgetCompliant": true,
+      "openingHoursCompliant": true,
+      "routeFeasible": true,
+      "visitedStopsCount": 3,
+      "visitedStopNames": [
+        "Golconda Fort",
+        "Charminar",
+        "Lumbini Park & Laser Show"
+      ],
+      "latencyMs": 1.6,
+      "validationResult": {
+        "isValid": true,
+        "errors": []
+      },
+      "noFabricationVerified": true
+    },
+    {
+      "scenarioId": "SCENARIO_02",
+      "scenarioName": "Strict Budget Constraint (₹400 / 2 pax)",
+      "category": "BUDGET",
+      "passed": true,
+      "isFeasible": true,
+      "actualArrival": "11:53",
+      "latestAllowedArrival": "19:00",
+      "deadlineCompliant": true,
+      "totalCost": 0,
+      "budgetCompliant": true,
+      "openingHoursCompliant": true,
+      "routeFeasible": true,
+      "visitedStopsCount": 2,
+      "visitedStopNames": [
+        "Lumbini Park & Laser Show",
+        "Hussain Sagar & Tank Bund"
+      ],
+      "latencyMs": 0.2,
+      "validationResult": {
+        "isValid": true,
+        "errors": []
+      },
+      "noFabricationVerified": true
+    },
+    {
+      "scenarioId": "SCENARIO_03",
+      "scenarioName": "Early Train Departure Deadline (15:00)",
+      "category": "TIME_WINDOW",
+      "passed": true,
+      "isFeasible": true,
+      "actualArrival": "14:07",
+      "latestAllowedArrival": "15:00",
+      "deadlineCompliant": true,
+      "totalCost": 150,
+      "budgetCompliant": true,
+      "openingHoursCompliant": true,
+      "routeFeasible": true,
+      "visitedStopsCount": 3,
+      "visitedStopNames": [
+        "Lumbini Park & Laser Show",
+        "Charminar",
+        "Salar Jung Museum"
+      ],
+      "latencyMs": 0.3,
+      "validationResult": {
+        "isValid": true,
+        "errors": []
+      },
+      "noFabricationVerified": true
+    },
+    {
+      "scenarioId": "SCENARIO_04",
+      "scenarioName": "Late Afternoon Start (14:00 - 19:30)",
+      "category": "TIME_WINDOW",
+      "passed": true,
+      "isFeasible": true,
+      "actualArrival": "17:35",
+      "latestAllowedArrival": "19:30",
+      "deadlineCompliant": true,
+      "totalCost": 900,
+      "budgetCompliant": true,
+      "openingHoursCompliant": true,
+      "routeFeasible": true,
+      "visitedStopsCount": 3,
+      "visitedStopNames": [
+        "Paradise Biryani",
+        "Lumbini Park & Laser Show",
+        "Hussain Sagar & Tank Bund"
+      ],
+      "latencyMs": 0.1,
+      "validationResult": {
+        "isValid": true,
+        "errors": []
+      },
+      "noFabricationVerified": true
+    },
+    {
+      "scenarioId": "SCENARIO_05",
+      "scenarioName": "Pedestrian Walking Tour (Drive -> Walk)",
+      "category": "TRAVEL_MODE",
+      "passed": true,
+      "isFeasible": true,
+      "actualArrival": "14:07",
+      "latestAllowedArrival": "18:00",
+      "deadlineCompliant": true,
+      "totalCost": 0,
+      "budgetCompliant": true,
+      "openingHoursCompliant": true,
+      "routeFeasible": true,
+      "visitedStopsCount": 2,
+      "visitedStopNames": [
+        "Lumbini Park & Laser Show",
+        "Hussain Sagar & Tank Bund"
+      ],
+      "latencyMs": 0.1,
+      "validationResult": {
+        "isValid": true,
+        "errors": []
+      },
+      "noFabricationVerified": true
+    },
+    {
+      "scenarioId": "SCENARIO_06",
+      "scenarioName": "Nature & Public Parks Priority",
+      "category": "INTERESTS",
+      "passed": true,
+      "isFeasible": true,
+      "actualArrival": "13:23",
+      "latestAllowedArrival": "17:30",
+      "deadlineCompliant": true,
+      "totalCost": 300,
+      "budgetCompliant": true,
+      "openingHoursCompliant": true,
+      "routeFeasible": true,
+      "visitedStopsCount": 3,
+      "visitedStopNames": [
+        "Golconda Fort",
+        "Hussain Sagar & Tank Bund",
+        "Lumbini Park & Laser Show"
+      ],
+      "latencyMs": 0.1,
+      "validationResult": {
+        "isValid": true,
+        "errors": []
+      },
+      "noFabricationVerified": true
+    },
+    {
+      "scenarioId": "SCENARIO_07",
+      "scenarioName": "Fast Paced Exploration (Tight Visit Buffers)",
+      "category": "PACE",
+      "passed": true,
+      "isFeasible": true,
+      "actualArrival": "14:10",
+      "latestAllowedArrival": "18:30",
+      "deadlineCompliant": true,
+      "totalCost": 200,
+      "budgetCompliant": true,
+      "openingHoursCompliant": true,
+      "routeFeasible": true,
+      "visitedStopsCount": 4,
+      "visitedStopNames": [
+        "Golconda Fort",
+        "Charminar",
+        "Lumbini Park & Laser Show",
+        "Hussain Sagar & Tank Bund"
+      ],
+      "latencyMs": 0.2,
+      "validationResult": {
+        "isValid": true,
+        "errors": []
+      },
+      "noFabricationVerified": true
+    },
+    {
+      "scenarioId": "SCENARIO_08",
+      "scenarioName": "Relaxed Pace Single Sight & Lake",
+      "category": "PACE",
+      "passed": true,
+      "isFeasible": true,
+      "actualArrival": "13:42",
+      "latestAllowedArrival": "17:00",
+      "deadlineCompliant": true,
+      "totalCost": 100,
+      "budgetCompliant": true,
+      "openingHoursCompliant": true,
+      "routeFeasible": true,
+      "visitedStopsCount": 2,
+      "visitedStopNames": [
+        "Lumbini Park & Laser Show",
+        "Charminar"
+      ],
+      "latencyMs": 0,
+      "validationResult": {
+        "isValid": true,
+        "errors": []
+      },
+      "noFabricationVerified": true
+    },
+    {
+      "scenarioId": "SCENARIO_09",
+      "scenarioName": "Family Group Tour (4 Pax Budget Multiplication)",
+      "category": "GROUP_SIZE",
+      "passed": true,
+      "isFeasible": true,
+      "actualArrival": "13:57",
+      "latestAllowedArrival": "18:00",
+      "deadlineCompliant": true,
+      "totalCost": 800,
+      "budgetCompliant": true,
+      "openingHoursCompliant": true,
+      "routeFeasible": true,
+      "visitedStopsCount": 3,
+      "visitedStopNames": [
+        "Golconda Fort",
+        "Charminar",
+        "Lumbini Park & Laser Show"
+      ],
+      "latencyMs": 1,
+      "validationResult": {
+        "isValid": true,
+        "errors": []
+      },
+      "noFabricationVerified": true
+    },
+    {
+      "scenarioId": "SCENARIO_10",
+      "scenarioName": "Mid-Morning Brunch & Heritage Tour",
+      "category": "TIME_WINDOW",
+      "passed": true,
+      "isFeasible": true,
+      "actualArrival": "15:24",
+      "latestAllowedArrival": "18:00",
+      "deadlineCompliant": true,
+      "totalCost": 1000,
+      "budgetCompliant": true,
+      "openingHoursCompliant": true,
+      "routeFeasible": true,
+      "visitedStopsCount": 3,
+      "visitedStopNames": [
+        "Paradise Biryani",
+        "Lumbini Park & Laser Show",
+        "Charminar"
+      ],
+      "latencyMs": 0.1,
+      "validationResult": {
+        "isValid": true,
+        "errors": []
+      },
+      "noFabricationVerified": true
+    },
+    {
+      "scenarioId": "SCENARIO_11",
+      "scenarioName": "Luxury / High Budget Heritage Experience",
+      "category": "BUDGET",
+      "passed": true,
+      "isFeasible": true,
+      "actualArrival": "16:07",
+      "latestAllowedArrival": "19:00",
+      "deadlineCompliant": true,
+      "totalCost": 1500,
+      "budgetCompliant": true,
+      "openingHoursCompliant": true,
+      "routeFeasible": true,
+      "visitedStopsCount": 4,
+      "visitedStopNames": [
+        "Golconda Fort",
+        "Charminar",
+        "Salar Jung Museum",
+        "Paradise Biryani"
+      ],
+      "latencyMs": 0.2,
+      "validationResult": {
+        "isValid": true,
+        "errors": []
+      },
+      "noFabricationVerified": true
+    },
+    {
+      "scenarioId": "SCENARIO_12",
+      "scenarioName": "Zero Budget / Free Sights Only",
+      "category": "BUDGET",
+      "passed": true,
+      "isFeasible": true,
+      "actualArrival": "11:23",
+      "latestAllowedArrival": "17:00",
+      "deadlineCompliant": true,
+      "totalCost": 0,
+      "budgetCompliant": true,
+      "openingHoursCompliant": true,
+      "routeFeasible": true,
+      "visitedStopsCount": 2,
+      "visitedStopNames": [
+        "Lumbini Park & Laser Show",
+        "Hussain Sagar & Tank Bund"
+      ],
+      "latencyMs": 0.1,
+      "validationResult": {
+        "isValid": true,
+        "errors": []
+      },
+      "noFabricationVerified": true
+    },
+    {
+      "scenarioId": "SCENARIO_13",
+      "scenarioName": "Airport Drop-off Departure Run (Long Transit)",
+      "category": "CORRIDOR",
+      "passed": true,
+      "isFeasible": true,
+      "actualArrival": "13:05",
+      "latestAllowedArrival": "17:00",
+      "deadlineCompliant": true,
+      "totalCost": 200,
+      "budgetCompliant": true,
+      "openingHoursCompliant": true,
+      "routeFeasible": true,
+      "visitedStopsCount": 2,
+      "visitedStopNames": [
+        "Golconda Fort",
+        "Charminar"
+      ],
+      "latencyMs": 0,
+      "validationResult": {
+        "isValid": true,
+        "errors": []
+      },
+      "noFabricationVerified": true
+    },
+    {
+      "scenarioId": "SCENARIO_14",
+      "scenarioName": "Culinary & Arts Focus",
+      "category": "INTERESTS",
+      "passed": true,
+      "isFeasible": true,
+      "actualArrival": "14:32",
+      "latestAllowedArrival": "18:30",
+      "deadlineCompliant": true,
+      "totalCost": 1020,
+      "budgetCompliant": true,
+      "openingHoursCompliant": true,
+      "routeFeasible": true,
+      "visitedStopsCount": 3,
+      "visitedStopNames": [
+        "Shilparamam Arts & Crafts Village",
+        "Paradise Biryani",
+        "Lumbini Park & Laser Show"
+      ],
+      "latencyMs": 0.5,
+      "validationResult": {
+        "isValid": true,
+        "errors": []
+      },
+      "noFabricationVerified": true
+    },
+    {
+      "scenarioId": "SCENARIO_15",
+      "scenarioName": "Opening Hours Boundary Enforcement",
+      "category": "OPENING_HOURS",
+      "passed": true,
+      "isFeasible": true,
+      "actualArrival": "13:10",
+      "latestAllowedArrival": "14:00",
+      "deadlineCompliant": true,
+      "totalCost": 300,
+      "budgetCompliant": true,
+      "openingHoursCompliant": true,
+      "routeFeasible": true,
+      "visitedStopsCount": 2,
+      "visitedStopNames": [
+        "Charminar",
+        "Salar Jung Museum"
+      ],
+      "latencyMs": 0,
+      "validationResult": {
+        "isValid": true,
+        "errors": []
+      },
+      "noFabricationVerified": true
+    },
+    {
+      "scenarioId": "SCENARIO_16",
+      "scenarioName": "Mid-Day Replan (Revised Constraints)",
+      "category": "DYNAMIC_REPLAN",
+      "passed": true,
+      "isFeasible": true,
+      "actualArrival": "17:00",
+      "latestAllowedArrival": "18:00",
+      "deadlineCompliant": true,
+      "totalCost": 100,
+      "budgetCompliant": true,
+      "openingHoursCompliant": true,
+      "routeFeasible": true,
+      "visitedStopsCount": 3,
+      "visitedStopNames": [
+        "Hussain Sagar & Tank Bund",
+        "Lumbini Park & Laser Show",
+        "Charminar"
+      ],
+      "latencyMs": 0.1,
+      "validationResult": {
+        "isValid": true,
+        "errors": []
+      },
+      "noFabricationVerified": true
+    },
+    {
+      "scenarioId": "SCENARIO_17",
+      "scenarioName": "Multimodal Image Upload Inclusion",
+      "category": "MULTIMODAL_IMAGE",
+      "passed": true,
+      "isFeasible": true,
+      "actualArrival": "12:42",
+      "latestAllowedArrival": "18:00",
+      "deadlineCompliant": true,
+      "totalCost": 100,
+      "budgetCompliant": true,
+      "openingHoursCompliant": true,
+      "routeFeasible": true,
+      "visitedStopsCount": 2,
+      "visitedStopNames": [
+        "Lumbini Park & Laser Show",
+        "Charminar (from Photo)"
+      ],
+      "latencyMs": 0,
+      "validationResult": {
+        "isValid": true,
+        "errors": []
+      },
+      "noFabricationVerified": true
+    },
+    {
+      "scenarioId": "SCENARIO_18",
+      "scenarioName": "Multimodal Feasibility Pruning",
+      "category": "MULTIMODAL_IMAGE",
+      "passed": true,
+      "isFeasible": true,
+      "actualArrival": "17:12",
+      "latestAllowedArrival": "17:30",
+      "deadlineCompliant": true,
+      "totalCost": 50,
+      "budgetCompliant": true,
+      "openingHoursCompliant": true,
+      "routeFeasible": true,
+      "visitedStopsCount": 2,
+      "visitedStopNames": [
+        "Lumbini Park & Laser Show",
+        "Charminar (from Photo)"
+      ],
+      "latencyMs": 0,
+      "validationResult": {
+        "isValid": true,
+        "errors": []
+      },
+      "noFabricationVerified": true
+    },
+    {
+      "scenarioId": "SCENARIO_19",
+      "scenarioName": "Mode Invalidation Re-plan (Walk Switch)",
+      "category": "DYNAMIC_REPLAN",
+      "passed": true,
+      "isFeasible": true,
+      "actualArrival": "13:07",
+      "latestAllowedArrival": "18:00",
+      "deadlineCompliant": true,
+      "totalCost": 0,
+      "budgetCompliant": true,
+      "openingHoursCompliant": true,
+      "routeFeasible": true,
+      "visitedStopsCount": 2,
+      "visitedStopNames": [
+        "Lumbini Park & Laser Show",
+        "Hussain Sagar & Tank Bund"
+      ],
+      "latencyMs": 0,
+      "validationResult": {
+        "isValid": true,
+        "errors": []
+      },
+      "noFabricationVerified": true
+    },
+    {
+      "scenarioId": "SCENARIO_20",
+      "scenarioName": "Direct Minimal Plan (Tight Edge Case)",
+      "category": "EDGE_CASE",
+      "passed": true,
+      "isFeasible": true,
+      "actualArrival": "10:45",
+      "latestAllowedArrival": "11:45",
+      "deadlineCompliant": true,
+      "totalCost": 0,
+      "budgetCompliant": true,
+      "openingHoursCompliant": true,
+      "routeFeasible": true,
+      "visitedStopsCount": 0,
+      "visitedStopNames": [],
+      "latencyMs": 0,
+      "validationResult": {
+        "isValid": true,
+        "errors": []
+      },
+      "noFabricationVerified": true
+    }
+  ],
+  "recoveryCases": [
+    {
+      "id": "REC_01_BUDGET_PRUNING",
+      "name": "Budget Conflict Recovery (₹200 Budget)",
+      "failureCategory": "BUDGET_CONFLICT",
+      "initialTrigger": "User requests 2 people with only ₹200 budget while dining candidate costs ₹900.",
+      "detectedCause": "Sum of expenses would breach ₹200 hard budget constraint.",
+      "recoveryStrategy": "Optimizer beam search prunes ₹900 dining, selects ₹0 free parks (Lumbini, Tank Bund).",
+      "recoveredSuccessfully": true,
+      "validatedOutcome": "Dining pruned; free parks selected. Total cost ₹0 <= ₹200 limit."
+    },
+    {
+      "id": "REC_02_MODE_INVALIDATION",
+      "name": "Travel Mode Switch Recovery (Drive → Walk)",
+      "failureCategory": "UNSUPPORTED_TRAVEL_MODE",
+      "initialTrigger": "User switches travel mode from drive to walk midway through planning session.",
+      "detectedCause": "Drive travel times and speeds are invalid for pedestrian walking.",
+      "recoveryStrategy": "Surgically invalidates route matrix while preserving candidate pool; recalculates with walk matrix.",
+      "recoveredSuccessfully": true,
+      "validatedOutcome": "Route matrix invalidated; pedestrian transit speeds recalculated; plan remains valid."
+    },
+    {
+      "id": "REC_03_PHOTO_FEASIBILITY_PRUNING",
+      "name": "Image Feasibility Conflict & Re-plan Recovery",
+      "failureCategory": "ENDPOINT_DEADLINE_CONFLICT",
+      "initialTrigger": "User requests addition of photo landmark that exceeds remaining buffer by 60 min.",
+      "detectedCause": "Transit detour (30m) + visit (60m) exceeds buffer (30m) by 60m.",
+      "recoveryStrategy": "Feasibility check flags shortfall; user clicks [Re-plan to Include It]; lower-utility stop pruned.",
+      "recoveredSuccessfully": true,
+      "validatedOutcome": "Photo landmark successfully integrated into schedule without deadline breach."
+    },
+    {
+      "id": "REC_04_UNKNOWN_LOCATION_HANDLING",
+      "name": "Unknown Location Resolution Recovery",
+      "failureCategory": "LOCATION_RESOLUTION_FAILURE",
+      "initialTrigger": "User entered unrecognized location string: \"xyz987qwer_nonexistent_fictional_place_12345\".",
+      "detectedCause": "Geocoding service returned zero coordinates.",
+      "recoveryStrategy": "Intercept request, halt pipeline, return polite correction guidance without fabricating coordinates.",
+      "recoveredSuccessfully": true,
+      "validatedOutcome": "Prompted user for clarification. Zero coordinates fabricated. System remained uncorrupted."
+    },
+    {
+      "id": "REC_05_API_FAILURE_GRACEFUL_DEGRADATION",
+      "name": "External API Outage Graceful Recovery",
+      "failureCategory": "API_RATE_LIMIT",
+      "initialTrigger": "External routing/places provider encounters temporary HTTP 503 outage.",
+      "detectedCause": "Network or rate-limit HTTP 503 response from provider endpoint.",
+      "recoveryStrategy": "Catch error, suppress raw stack trace, inform user courteously without inventing fake routes.",
+      "recoveredSuccessfully": true,
+      "validatedOutcome": "Clean failure handled with user notice. Zero mock/fabricated routes returned to user."
+    }
+  ],
+  "failureTaxonomy": {
+    "LOCATION_RESOLUTION_FAILURE": {
+      "category": "LOCATION_RESOLUTION_FAILURE",
+      "stage": "input",
+      "detectedCause": "Geocoding service returned zero matching coordinates for start or destination text.",
+      "recoveryAction": "Intercept pre-flight, prompt user for neighborhood or city qualifier, zero fake coordinates.",
+      "finalOutcome": "user_action_required"
+    },
+    "NO_CANDIDATES": {
+      "category": "NO_CANDIDATES",
+      "stage": "discovery",
+      "detectedCause": "Candidate discovery returned zero places matching specific narrow categories.",
+      "recoveryAction": "Broaden search radius across travel corridor or fall back to balanced general tourist categories.",
+      "finalOutcome": "recovered"
+    },
+    "NO_FEASIBLE_ROUTE": {
+      "category": "NO_FEASIBLE_ROUTE",
+      "stage": "routing",
+      "detectedCause": "Missing road connection or non-traversable segment between two candidate locations.",
+      "recoveryAction": "Prune disconnected candidate from graph traversal, preserve connected subgraph.",
+      "finalOutcome": "recovered"
+    },
+    "BUDGET_CONFLICT": {
+      "category": "BUDGET_CONFLICT",
+      "stage": "optimization",
+      "detectedCause": "Sum of candidate admission/spend exceeds user total budget limit.",
+      "recoveryAction": "Optimizer beam search prunes high-cost candidates, prioritizing free public sights and parks.",
+      "finalOutcome": "recovered"
+    },
+    "TIME_CONFLICT": {
+      "category": "TIME_CONFLICT",
+      "stage": "optimization",
+      "detectedCause": "Combined transit time and visit durations exceed start-to-deadline window.",
+      "recoveryAction": "Optimizer prunes lowest utility stops until total elapsed time plus safety buffer fits deadline.",
+      "finalOutcome": "recovered"
+    },
+    "OPENING_HOURS_CONFLICT": {
+      "category": "OPENING_HOURS_CONFLICT",
+      "stage": "optimization",
+      "detectedCause": "Candidate place is closed during arrival time window or opens after departure.",
+      "recoveryAction": "Discard candidate during node expansion in beam search; do not schedule visits during closed hours.",
+      "finalOutcome": "recovered"
+    },
+    "ENDPOINT_DEADLINE_CONFLICT": {
+      "category": "ENDPOINT_DEADLINE_CONFLICT",
+      "stage": "validation",
+      "detectedCause": "Final arrival at destination exceeds user latestArrivalTime or safety buffer is under 15m.",
+      "recoveryAction": "Validator triggers recovery loop; agent prunes final intermediate detour stop and recalculates.",
+      "finalOutcome": "recovered"
+    },
+    "API_RATE_LIMIT": {
+      "category": "API_RATE_LIMIT",
+      "stage": "discovery",
+      "detectedCause": "Geoapify (3,000 RPD) or Groq (1,000 RPD / 30 RPM) quota limit reached.",
+      "recoveryAction": "Serve from in-memory PlacesCache and RouteMatrix cache; display respectful temporary wait message.",
+      "finalOutcome": "graceful_fallback"
+    },
+    "LLM_FAILURE": {
+      "category": "LLM_FAILURE",
+      "stage": "replanning",
+      "detectedCause": "Groq API timeout, invalid JSON format, or rate limit during agent tool-selection decision.",
+      "recoveryAction": "Fallback to deterministic rule-based planner pipeline and structured state diffs.",
+      "finalOutcome": "recovered"
+    },
+    "VISION_UNCERTAIN": {
+      "category": "VISION_UNCERTAIN",
+      "stage": "vision",
+      "detectedCause": "Groq vision confidence score < 0.80 or ambiguous landmark recognition.",
+      "recoveryAction": "Present candidate alternatives list for user manual selection; do not automatically inject stop.",
+      "finalOutcome": "user_action_required"
+    },
+    "PLACE_VERIFICATION_FAILURE": {
+      "category": "PLACE_VERIFICATION_FAILURE",
+      "stage": "vision",
+      "detectedCause": "Visual prediction could not be verified against factual Geoapify places database.",
+      "recoveryAction": "Flag candidate as unverified, display warning badge, refuse automatic route addition.",
+      "finalOutcome": "rejected"
+    },
+    "UNKNOWN_COST": {
+      "category": "UNKNOWN_COST",
+      "stage": "optimization",
+      "detectedCause": "Attraction admission fee not published in Geoapify provider metadata.",
+      "recoveryAction": "Explicitly mark costSource as \"unknown\", do not treat as ₹0 silently, display counter note.",
+      "finalOutcome": "recovered"
+    },
+    "UNSUPPORTED_TRAVEL_MODE": {
+      "category": "UNSUPPORTED_TRAVEL_MODE",
+      "stage": "input",
+      "detectedCause": "Travel mode not supported by routing engine (e.g. \"submarine\", \"flight\").",
+      "recoveryAction": "Pre-flight schema validation rejects mode, restricts to drive/walk/bicycle/transit.",
+      "finalOutcome": "rejected"
+    }
+  }
+}
