@@ -211,6 +211,35 @@ export class BeamSearchOptimizer {
           statesGenerated++;
           const cand = candidatePool[i];
 
+          // Prevent visiting duplicate or near-identical named entities in the same itinerary
+          const candNorm = cand.name.trim().toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ');
+          const candRoot = candNorm
+            .replace(/\b(phase|sector|block|gate|part|zone|ward|circle|stage)\s*\d+\b/g, '')
+            .replace(/\b\d+\b/g, '')
+            .trim();
+
+          const isDuplicateVisited = state.visitedCandidates.some((v) => {
+            const vNorm = v.name.trim().toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ');
+            const vRoot = vNorm
+              .replace(/\b(phase|sector|block|gate|part|zone|ward|circle|stage)\s*\d+\b/g, '')
+              .replace(/\b\d+\b/g, '')
+              .trim();
+
+            if (vNorm && vNorm === candNorm) return true;
+            if (candRoot && candRoot.length >= 4 && vRoot === candRoot) return true;
+            if (v.category === cand.category) {
+              const dLat = v.latitude - cand.latitude;
+              const dLon = v.longitude - cand.longitude;
+              if (Math.abs(dLat) < 0.003 && Math.abs(dLon) < 0.003) return true;
+            }
+            return false;
+          });
+
+          if (isDuplicateVisited) {
+            statesPruned++;
+            continue;
+          }
+
           // 1. Directed travel leg from last location to candidate
           const legToCandidate = getDirectedLeg(state.lastLocationId, cand.id);
           if (!legToCandidate) {

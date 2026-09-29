@@ -1,0 +1,521 @@
+{
+  "dataset": "development-78.json",
+  "iteration": 0,
+  "timestamp": "2026-09-29T09:39:35.708Z",
+  "total_failures_detected": 32,
+  "top_recurring_failure_patterns": [
+    {
+      "category": "POOR_TOURIST_RELEVANCE",
+      "occurrences": 29
+    },
+    {
+      "category": "REPLANNING_ADAPTATION_FAILURE",
+      "occurrences": 3
+    }
+  ],
+  "responsible_subsystems": {
+    "candidate_scoring": 29,
+    "replanning_logic": 3
+  },
+  "per_case_diagnostics": [
+    {
+      "case_id": "005",
+      "city": "Hyderabad",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (20%): ordinary local places selected.",
+        "Replanning adaptation imperfect: failed to satisfy revised constraint."
+      ],
+      "selected_places": [
+        "Clarion Hotel",
+        "Am- Pm cafe",
+        "JV Colony Park",
+        "GHMC Park",
+        "Quiet Lands Park",
+        "shilparamam",
+        "Clarion Hotel"
+      ],
+      "total_cost": 1000
+    },
+    {
+      "case_id": "006",
+      "city": "Hyderabad",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (40%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "Charminar",
+        "Salar Jung Museum",
+        "Raja Dhanrajgir Palace",
+        "GHMC PARK",
+        "GHMC PARK",
+        "GHMC PARK",
+        "Taj Banjara"
+      ],
+      "total_cost": 0
+    },
+    {
+      "case_id": "008",
+      "city": "Hyderabad",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (50%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "Secunderabad",
+        "know concepts designs",
+        "Luckys Biryani - PadmaraoNagar",
+        "The English and Foreign Languages University (EFLU)",
+        "The Heritage well",
+        "Rajiv Gandhi International Airport"
+      ],
+      "total_cost": 450
+    },
+    {
+      "case_id": "011",
+      "city": "Hyderabad",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (0%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "Hussain Sagar",
+        "Lake View Park",
+        "Sea Rock Cafe",
+        "Somajiguda"
+      ],
+      "total_cost": 400
+    },
+    {
+      "case_id": "013",
+      "city": "Hyderabad",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (50%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "Charminar",
+        "Charminar",
+        "Gulzar houz (fountain)",
+        "Begum bazar chaman",
+        "goshamahal old quarters park",
+        "Apsara hotel"
+      ],
+      "total_cost": 0
+    },
+    {
+      "case_id": "014",
+      "city": "Hyderabad",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (0%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "Rajiv Gandhi International Airport",
+        "Public Park",
+        "play area",
+        "Rajiv Gandhi International Airport"
+      ],
+      "total_cost": 0
+    },
+    {
+      "case_id": "018",
+      "city": "Hyderabad",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (33%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "Secunderabad",
+        "Almond House",
+        "know concepts designs",
+        "park",
+        "Secunderabad"
+      ],
+      "total_cost": 400
+    },
+    {
+      "case_id": "020",
+      "city": "Hyderabad",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (50%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "Taj Biryani Hotel",
+        "Nagajyoti hotel",
+        "Rotary Club Circle",
+        "Barid Shahi Garden",
+        "Bidar Fort",
+        "Taj Biryani Hotel"
+      ],
+      "total_cost": 900
+    },
+    {
+      "case_id": "021",
+      "city": "Hyderabad",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (17%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "HITEC City",
+        "Shilparamam",
+        "shilparamam",
+        "GHMC park",
+        "Mainland China",
+        "Interactive Science park",
+        "GHMC Park",
+        "HITEC City"
+      ],
+      "total_cost": 1800
+    },
+    {
+      "case_id": "027",
+      "city": "Bengaluru",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (0%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "Indiranagar",
+        "NGV Park",
+        "Chandra Reddy",
+        "S T Bed Park at 5th Cross",
+        "Silk Board Junction"
+      ],
+      "total_cost": 0
+    },
+    {
+      "case_id": "031",
+      "city": "Bengaluru",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (0%): ordinary local places selected.",
+        "Replanning adaptation imperfect: failed to satisfy revised constraint."
+      ],
+      "selected_places": [
+        "Jayanagar",
+        "Laxman Rao Park",
+        "Laxman Rao Park",
+        "Brindavana Park",
+        "Laxman Rao Park",
+        "Laxman Rao Park",
+        "Jayanagar"
+      ],
+      "total_cost": 0
+    },
+    {
+      "case_id": "033",
+      "city": "Bengaluru",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (50%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "Monarch Hotel",
+        "Kempegowda Museum",
+        "Rezwan Razack Museum of Indian Paper Money",
+        "War Tank",
+        "YOYO! Fresh Tea Bar",
+        "Children's Park",
+        "Childrens Playing Park",
+        "Indiranagar"
+      ],
+      "total_cost": 400
+    },
+    {
+      "case_id": "034",
+      "city": "Bengaluru",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (20%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "Koramangala",
+        "The Hole In The Wall Cafe",
+        "SL Bhatia Medicine Museum",
+        "Akhila Park",
+        "KHB Colony Park",
+        "Leena Park",
+        "Koramangala"
+      ],
+      "total_cost": 400
+    },
+    {
+      "case_id": "035",
+      "city": "Bengaluru",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (0%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "Temple Tree Hotel",
+        "Doctor Mujahid Pasha Park",
+        "Bhuvaneshwari Park",
+        "Kitturu Rani Chennamma Park",
+        "Temple Tree Hotel"
+      ],
+      "total_cost": 0
+    },
+    {
+      "case_id": "038",
+      "city": "Bengaluru",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (25%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "Marathahalli",
+        "Unitea Hub Cafe",
+        "77 Place common park",
+        "Dr Ambedkar Statue",
+        "HAL Aerospace Museum",
+        "Marathahalli"
+      ],
+      "total_cost": 400
+    },
+    {
+      "case_id": "040",
+      "city": "Bengaluru",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (40%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "JP Nagar",
+        "Benki Coffee",
+        "Sri SK Nataraj Park",
+        "PARSEC - Param Science Experience Centre",
+        "Work",
+        "Senior Citizen Park",
+        "JP Nagar"
+      ],
+      "total_cost": 400
+    },
+    {
+      "case_id": "042",
+      "city": "Bengaluru",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (0%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "Silk Board",
+        "The Caffeine Baar",
+        "Mahatma Gandhi Park",
+        "Hebbal"
+      ],
+      "total_cost": 200
+    },
+    {
+      "case_id": "045",
+      "city": "Bengaluru",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (0%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "Jayanagar",
+        "Brindavana Park",
+        "Laxman Rao Park",
+        "Laxman Rao Park",
+        "Laxman Rao Park",
+        "Laxman Rao Park",
+        "Jayanagar"
+      ],
+      "total_cost": 0
+    },
+    {
+      "case_id": "047",
+      "city": "Bengaluru",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (40%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "BTM Layout",
+        "BTM Park",
+        "NIMHANS Heritage Museum",
+        "Work",
+        "Swadista Ahara",
+        "Kuvempu Park",
+        "BTM Layout"
+      ],
+      "total_cost": 1800
+    },
+    {
+      "case_id": "051",
+      "city": "Bengaluru",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (40%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "Majestic Hotel",
+        "Gandhinagar Park",
+        "CCD",
+        "J's La Quill Museum",
+        "Bangalore Fort",
+        "Lokmanya Tilak Park",
+        "Majestic Hotel"
+      ],
+      "total_cost": 200
+    },
+    {
+      "case_id": "056",
+      "city": "Chennai",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (50%): ordinary local places selected.",
+        "Replanning adaptation imperfect: failed to satisfy revised constraint."
+      ],
+      "selected_places": [
+        "Mylapore",
+        "ராசாஸ் டீ கடை",
+        "சென்னை மெரினா கலங்கரை விளக்கம்",
+        "Chennai Lighthouse Museum",
+        "Annie Besant Park",
+        "Marina Beach"
+      ],
+      "total_cost": 400
+    },
+    {
+      "case_id": "058",
+      "city": "Chennai",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (40%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "Mylapore",
+        "Triplicane Ratna Cafe",
+        "Nageswara Rao Park",
+        "அக்பர் மருந்து மில்",
+        "Chennai Lighthouse Museum",
+        "Alphonso Government play ground",
+        "Mylapore"
+      ],
+      "total_cost": 900
+    },
+    {
+      "case_id": "066",
+      "city": "Chennai",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (25%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "Mylapore",
+        "ராசாஸ் டீ கடை",
+        "அக்பர் மருந்து மில்",
+        "Rohini Garden Park",
+        "Alphonso Government play ground",
+        "Mylapore"
+      ],
+      "total_cost": 400
+    },
+    {
+      "case_id": "070",
+      "city": "Chennai",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (33%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "Chennai International Airport Fire Station 2",
+        "Alandur",
+        "Sukkubhai Biryani",
+        "Typewritting class",
+        "Guindy"
+      ],
+      "total_cost": 450
+    },
+    {
+      "case_id": "072",
+      "city": "Chennai",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (33%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "Egmore",
+        "Mayor Sundar Rao Naidu Park",
+        "Brownie Heaven",
+        "Vivekananda Heritage Museum",
+        "Chennai Marina Lighthouse"
+      ],
+      "total_cost": 200
+    },
+    {
+      "case_id": "074",
+      "city": "Chennai",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (0%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "Great Hotel",
+        "Zam Bazaar Market",
+        "எக்ஸ்பிரஸ் அவென்யூ மால்",
+        "Chella Mall",
+        "T Nager Street Market",
+        "Thiyagaraya Nagar"
+      ],
+      "total_cost": 0
+    },
+    {
+      "case_id": "075",
+      "city": "Chennai",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (50%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "Great Hotel",
+        "Chepauk Palace",
+        "India Post Philatelic Bureau",
+        "Avin, Snacks and Eateries",
+        "Rajasthani Ground",
+        "Great Hotel"
+      ],
+      "total_cost": 400
+    },
+    {
+      "case_id": "076",
+      "city": "Chennai",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (50%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "Great Hotel",
+        "Avin, Snacks and Eateries",
+        "Fort St. George Museum",
+        "Fort St. George",
+        "Napier Park",
+        "Central Station PS"
+      ],
+      "total_cost": 400
+    },
+    {
+      "case_id": "078",
+      "city": "Chennai",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (40%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "Great Hotel",
+        "MMC Ground",
+        "Fort St. George Museum",
+        "Fort St. George",
+        "Avin, Snacks and Eateries",
+        "Rajasthani Ground",
+        "Great Hotel"
+      ],
+      "total_cost": 400
+    }
+  ]
+}

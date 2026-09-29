@@ -54,9 +54,9 @@ export const INTEREST_TO_GEOAPIFY_CATEGORIES: Record<string, string[]> = {
     'building.historic',
   ],
   photography: [
-    'tourism.sights.viewpoint',
     'tourism.attraction',
-    'tourism.sights',
+    'heritage',
+    'building.historic',
   ],
   religious: [
     'building.place_of_worship',
@@ -92,9 +92,12 @@ export const DEFAULT_BALANCED_CATEGORIES: string[] = [
   'tourism.sights.fort,tourism.sights.castle',
   'entertainment.museum',
   'tourism.sights.archaeological_site',
+  'heritage',
+  'building.historic',
   'tourism.attraction',
-  'leisure.park',
+  'entertainment.culture',
   'entertainment.theme_park,entertainment.zoo',
+  'leisure.park.garden',
   'catering.restaurant',
   'catering.cafe',
 ];

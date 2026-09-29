@@ -54,7 +54,7 @@ export class GeoapifyClient {
   }
 
   /**
-   * Safe fetch wrapper with error decoding and quota rate-limit handling
+   * Safe fetch wrapper with error decoding, request timeout, and quota rate-limit handling
    */
   protected async fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
     const startTime = Date.now();
@@ -62,7 +62,11 @@ export class GeoapifyClient {
 
     let res: Response;
     try {
-      res = await fetch(url, options);
+      const timeoutSignal = AbortSignal.timeout(10000);
+      const signal = options?.signal
+        ? AbortSignal.any([options.signal, timeoutSignal])
+        : timeoutSignal;
+      res = await fetch(url, { ...options, signal });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Network error';
       throw new Error(`Geoapify connection failed: ${this.sanitizeUrl(msg)}`);

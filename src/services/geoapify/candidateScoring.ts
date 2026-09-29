@@ -23,13 +23,13 @@ export interface ScoringWeights {
 }
 
 export const DEFAULT_SCORING_WEIGHTS: ScoringWeights = {
-  interestRelevance: 0.30,
-  geographicPracticality: 0.25,
-  openingCompatibility: 0.10,
-  budgetCompatibility: 0.10,
-  qualitySignal: 0.10,
-  diversityBonus: 0.10,
-  travelBurdenPenalty: 0.15,
+  interestRelevance: 0.40,
+  geographicPracticality: 0.20,
+  openingCompatibility: 0.05,
+  budgetCompatibility: 0.05,
+  qualitySignal: 0.15,
+  diversityBonus: 0.05,
+  travelBurdenPenalty: 0.10,
 };
 
 export interface ScoringContext {
@@ -103,30 +103,25 @@ export function scoreCandidate(
   }
 
   // 4. Budget Compatibility (0 - 100)
-  let budgetScore = 70; // baseline for unknown cost
-  if (place.costSource === 'free') {
-    budgetScore = 100;
-  } else if (place.costSource === 'known' || place.costSource === 'estimated') {
-    const costForGroup = place.cost.totalForGroup ?? (place.cost.amountPerPerson || 0) * (context.peopleCount || 1);
-    const limit = context.totalBudget ?? (context.perPersonBudget ? context.perPersonBudget * (context.peopleCount || 1) : undefined);
+  // Evaluates affordability within user's budget without giving zero-cost places an artificial advantage over affordable cultural sights.
+  let budgetScore = 80;
+  const costForGroup = place.cost.totalForGroup ?? (place.cost.amountPerPerson || 0) * (context.peopleCount || 1);
+  const limit = context.totalBudget ?? (context.perPersonBudget ? context.perPersonBudget * (context.peopleCount || 1) : undefined);
 
-    if (limit !== undefined && limit > 0) {
-      if (costForGroup <= limit * 0.5) {
-        budgetScore = 95; // well within budget
-      } else if (costForGroup <= limit) {
-        budgetScore = 80; // fits in budget
-      } else if (costForGroup <= limit * 1.2) {
-        budgetScore = 40; // slightly above budget
-      } else {
-        budgetScore = 10; // clearly expensive / impossible for budget
-      }
+  if (limit !== undefined && limit > 0) {
+    if (costForGroup === 0 || costForGroup <= limit * 0.4) {
+      budgetScore = 95; // perfectly affordable / comfortable
+    } else if (costForGroup <= limit * 0.7) {
+      budgetScore = 85; // easily fits in budget
+    } else if (costForGroup <= limit) {
+      budgetScore = 75; // fits within budget ceiling
+    } else if (costForGroup <= limit * 1.2) {
+      budgetScore = 35; // slightly above budget
     } else {
-      budgetScore = 75;
+      budgetScore = 10; // clearly expensive / exceeds budget
     }
   } else {
-    // costSource === 'unknown'
-    // Under strict policy: unknown is not assumed cheap, but not penalized as if out-of-budget
-    budgetScore = 60;
+    budgetScore = 85;
   }
 
   // 5. Quality Signal (0 - 100)
@@ -219,6 +214,24 @@ export function scoreCandidate(
     );
   if (isGenericLocal) {
     qualityAdjustment -= 25;
+  }
+
+  const userWantsNature = (context.userInterests || []).some((i) =>
+    /\b(nature|park|garden|outdoor|lake|botanic|wildlife)\b/i.test(i)
+  );
+  const isGenericPark =
+    (place.category === 'park' || (place.categories || []).some((c) => c.startsWith('leisure.park'))) &&
+    !(place.categories || []).some((c) => c === 'leisure.park.garden' || c === 'leisure.nature_reserve') &&
+    !/\b(botanical|garden|national park|sanctuary|lake view|biodiversity)\b/i.test(place.name || '');
+
+  if (isGenericPark && !userWantsNature) {
+    qualityAdjustment -= 25; // Ordinary municipal park downweighted when no nature interest
+  }
+
+  // Major tourist attraction prominence boost (Tier 1 landmarks)
+  const relScore = place.touristRelevanceScore ?? relevanceScore;
+  if (relScore >= 88) {
+    qualityAdjustment += 15; // Prominent heritage, palace, fort, major museum boost
   }
 
   // Composite Weighted Score Calculation

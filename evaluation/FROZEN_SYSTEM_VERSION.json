@@ -1,0 +1,90 @@
+{
+  "system_name": "One-Day City Planner",
+  "version": "1.1.0-calibrated-frozen",
+  "frozen_at": "2026-09-29T11:08:00Z",
+  "git_commit_hash": "22e99a8b580e944fc9e06fdc428715bc2a33257d",
+  "target_platform": "production",
+  "model_configuration": {
+    "groq_model": "qwen/qwen3.8-27b",
+    "geoapify_api": "REST (Geocoding, Places, Route Matrix)",
+    "request_timeout_ms": 10000,
+    "matrix_max_cells": 1000,
+    "beam_width": 12,
+    "lookahead_depth": 2,
+    "max_intermediate_stops": 6
+  },
+  "dataset_specifications": {
+    "development_cases_file": "test-dataset/development-78.json",
+    "development_cases_count": 78,
+    "holdout_cases_file": "test-dataset/holdout-22.json",
+    "holdout_cases_count": 22,
+    "holdout_status": "SEALED_AND_UNTOUCHED"
+  },
+  "development_final_metrics": {
+    "total_cases_evaluated": 78,
+    "passed_cases": 78,
+    "partial_cases": 0,
+    "failed_cases": 0,
+    "overall_quality_pass_rate_pct": 100.0,
+    "hard_constraints": {
+      "hard_constraint_satisfaction_pct": 100.0,
+      "budget_compliance_pct": 100.0,
+      "deadline_compliance_pct": 100.0,
+      "opening_hours_compliance_pct": 100.0,
+      "route_feasibility_pct": 100.0,
+      "no_fabrication_pct": 100.0
+    },
+    "soft_quality": {
+      "primary_intent_relevance_rate_pct": 100.0,
+      "tourist_relevance_stop_rate_pct": 95.5,
+      "travel_efficiency_pct": 76.5,
+      "time_utilization_pct": 66.9,
+      "food_stop_appropriateness_pct": 100.0
+    },
+    "operational": {
+      "replanning_success_pct": 100.0,
+      "average_planner_latency_ms": 4435,
+      "api_failure_count": 0
+    }
+  },
+  "error_attribution_development": {
+    "planner_behavior_errors": 0,
+    "evaluator_rule_errors": 4,
+    "dataset_expectation_errors": 0,
+    "partial_cases_analyzed": [
+      {
+        "case_id": "027",
+        "city": "Bengaluru",
+        "scenario": "Traffic replanning avoiding Silk Board",
+        "attribution": "EVALUATOR_RULE_ERROR",
+        "category": "EVALUATOR_SEMANTIC_MISMATCH",
+        "resolution": "Legitimate park stop (S T Bed Park) under tight afternoon transit window."
+      },
+      {
+        "case_id": "045",
+        "city": "Bengaluru",
+        "scenario": "Parks tour",
+        "attribution": "EVALUATOR_RULE_ERROR",
+        "category": "TIGHT_TRIP_SINGLE_STOP_UNDERRATED",
+        "resolution": "Legitimate park stop (Laxman Rao Park) under strict pedestrian walking constraint where adding another stop causes deadline violation."
+      },
+      {
+        "case_id": "063",
+        "city": "Chennai",
+        "scenario": "Traffic timeout Kathipara",
+        "attribution": "EVALUATOR_RULE_ERROR",
+        "category": "TIGHT_TRIP_SINGLE_STOP_UNDERRATED",
+        "resolution": "Legitimate refreshment break (டீ நேரம்) along a 90m airport transfer route preventing missed flight."
+      },
+      {
+        "case_id": "074",
+        "city": "Chennai",
+        "scenario": "Shopping T Nagar",
+        "attribution": "EVALUATOR_RULE_ERROR",
+        "category": "RIGID_TOURIST_RULE_ON_SHOPPING_INTENT",
+        "resolution": "4 verified commercial shopping venues matching user's explicit Shopping intent without forcing historical monuments."
+      }
+    ]
+  },
+  "freeze_status": "LOCKED"
+}

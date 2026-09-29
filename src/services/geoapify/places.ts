@@ -38,7 +38,12 @@ import {
 } from './candidateScoring';
 import { GeoapifyClient } from './client';
 import { GeoapifyPlacesResponse } from './types';
-import { classifyTouristRelevance, hasReligiousInterest } from './touristRelevance';
+import {
+  classifyTouristRelevance,
+  hasFoodInterest,
+  hasNatureInterest,
+  hasReligiousInterest,
+} from './touristRelevance';
 
 export interface CandidateDiscoveryRequest {
   city: string;
@@ -340,14 +345,28 @@ export class GeoapifyPlacesService extends GeoapifyClient implements IGeoapifyPl
   /**
    * Deduplicates Geoapify features.
    * Primary key: place_id
-   * Fallback: normalized name + coordinates <= 100 meters
+   * Fallback 1: Near-identical coordinates (<= 25m) with category overlap
+   * Fallback 2: Identical/near-identical normalized names within 1500m (e.g. multiple park gates/nodes)
    */
   private deduplicateFeatures(
     features: GeoapifyPlacesResponse['features']
   ): GeoapifyPlacesResponse['features'] {
     const seenPlaceIds = new Set<string>();
-    const seenNamePoints: Array<{ name: string; lat: number; lon: number }> = [];
+    const seenEntities: Array<{ name: string; rootName: string; lat: number; lon: number; categories: string[] }> = [];
     const deduplicated: GeoapifyPlacesResponse['features'] = [];
+
+    const normalize = (s: string) =>
+      (s || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^\w\s]/g, '')
+        .replace(/\s+/g, ' ');
+
+    const getRootName = (s: string) =>
+      normalize(s)
+        .replace(/\b(phase|sector|block|gate|part|zone|ward|circle|stage)\s*\d+\b/g, '')
+        .replace(/\b\d+\b/g, '')
+        .trim();
 
     for (const feat of features) {
       const p = feat.properties;
@@ -357,24 +376,40 @@ export class GeoapifyPlacesService extends GeoapifyClient implements IGeoapifyPl
         continue;
       }
 
-      const name = (p.name || '').trim().toLowerCase().replace(/[^\w\s]/g, '');
+      const rawName = p.name || '';
+      const normName = normalize(rawName);
+      const rootName = getRootName(rawName);
       const lat = p.lat ?? feat.geometry?.coordinates?.[1];
       const lon = p.lon ?? feat.geometry?.coordinates?.[0];
+      const cats = (p.categories || []).map((c: string) => c.toLowerCase());
 
-      if (name && typeof lat === 'number' && typeof lon === 'number') {
-        const isDuplicatePoint = seenNamePoints.some((item) => {
-          if (item.name === name) {
-            const dist = calculateHaversineDistance(item.lat, item.lon, lat, lon);
-            return dist <= 100; // within 100 meters
+      if (typeof lat === 'number' && typeof lon === 'number') {
+        const isDuplicate = seenEntities.some((item) => {
+          const dist = calculateHaversineDistance(item.lat, item.lon, lat, lon);
+
+          // 1. Very close coordinates (<= 25m): same physical location
+          if (dist <= 25) {
+            return true;
           }
+
+          // 2. Exact normalized name within 1500m: same attraction/park entity
+          if (normName && item.name === normName && dist <= 1500) {
+            return true;
+          }
+
+          // 3. Same root name (e.g. "Laxman Rao Park" vs "Laxman Rao Park Phase 2") within 1500m
+          if (rootName && rootName.length >= 4 && item.rootName === rootName && dist <= 1500) {
+            return true;
+          }
+
           return false;
         });
 
-        if (isDuplicatePoint) {
+        if (isDuplicate) {
           continue;
         }
 
-        seenNamePoints.push({ name, lat, lon });
+        seenEntities.push({ name: normName, rootName, lat, lon, categories: cats });
       }
 
       if (placeId) {
@@ -395,6 +430,8 @@ export class GeoapifyPlacesService extends GeoapifyClient implements IGeoapifyPl
     interests?: string[]
   ): CandidatePlace[] {
     const wantsReligion = hasReligiousInterest(interests);
+    const wantsFood = hasFoodInterest(interests);
+    const wantsNature = hasNatureInterest(interests);
 
     // 1. Filter out low-tier noise when religion is not requested
     const filtered = candidates.filter((cand) => {
@@ -402,8 +439,8 @@ export class GeoapifyPlacesService extends GeoapifyClient implements IGeoapifyPl
         cand.category === 'religious' ||
         (cand.categories || []).some((c) => c.includes('place_of_worship'));
       if (isReligious && !wantsReligion) {
-        // Exclude ordinary worship places (score < 50)
-        return (cand.touristRelevanceScore ?? 50) >= 50;
+        // Exclude ordinary worship places (score < 60)
+        return (cand.touristRelevanceScore ?? 50) >= 60;
       }
       return true;
     });
@@ -414,13 +451,15 @@ export class GeoapifyPlacesService extends GeoapifyClient implements IGeoapifyPl
 
     // 2. Balanced diversity selection with category and type quotas
     const maxPerCategory = Math.max(3, Math.ceil(targetSize / 3));
-    const maxFoodStops = 3;
+    const maxFoodStops = wantsFood ? 4 : 2;
     const maxOrdinaryStatues = 1;
-    const maxReligiousStops = wantsReligion ? 4 : 1;
+    const maxReligiousStops = wantsReligion ? 4 : 0;
+    const maxGenericParks = wantsNature ? 4 : 1;
 
     let foodCount = 0;
     let ordinaryStatueCount = 0;
     let religiousCount = 0;
+    let genericParkCount = 0;
 
     const categoryCounts: Record<string, number> = {};
     const selected: CandidatePlace[] = [];
@@ -448,6 +487,10 @@ export class GeoapifyPlacesService extends GeoapifyClient implements IGeoapifyPl
             c.includes('fort') ||
             c.includes('heritage')
         );
+      const isGenericPark =
+        (cand.category === 'park' || (cand.categories || []).some((c) => c.startsWith('leisure.park'))) &&
+        !(cand.categories || []).some((c) => c === 'leisure.park.garden' || c === 'leisure.nature_reserve') &&
+        !/\b(botanical|garden|national park|sanctuary|lake view|biodiversity)\b/i.test(cand.name);
 
       if (isFood && foodCount >= maxFoodStops) {
         continue;
@@ -458,6 +501,9 @@ export class GeoapifyPlacesService extends GeoapifyClient implements IGeoapifyPl
       if (isOrdinaryStatue && ordinaryStatueCount >= maxOrdinaryStatues) {
         continue;
       }
+      if (isGenericPark && genericParkCount >= maxGenericParks) {
+        continue;
+      }
 
       const count = categoryCounts[cand.category] || 0;
       if (count < maxPerCategory && selected.length < targetSize) {
@@ -466,14 +512,26 @@ export class GeoapifyPlacesService extends GeoapifyClient implements IGeoapifyPl
         if (isFood) foodCount++;
         if (isReligious) religiousCount++;
         if (isOrdinaryStatue) ordinaryStatueCount++;
+        if (isGenericPark) genericParkCount++;
       } else {
         overflow.push(cand);
       }
     }
 
-    // If still below target size, fill from top overflow
+    // If still below target size, fill from top overflow prioritizing tourist relevance
+    overflow.sort((a, b) => (b.touristRelevanceScore ?? 50) - (a.touristRelevanceScore ?? 50));
     while (selected.length < targetSize && overflow.length > 0) {
-      selected.push(overflow.shift()!);
+      const candidate = overflow.shift()!;
+      const isGenericPark =
+        (candidate.category === 'park' || (candidate.categories || []).some((c) => c.startsWith('leisure.park'))) &&
+        !(candidate.categories || []).some((c) => c === 'leisure.park.garden' || c === 'leisure.nature_reserve') &&
+        !/\b(botanical|garden|national park|sanctuary|lake view|biodiversity)\b/i.test(candidate.name);
+
+      if (isGenericPark && genericParkCount >= maxGenericParks) {
+        continue;
+      }
+      selected.push(candidate);
+      if (isGenericPark) genericParkCount++;
     }
 
     return selected;

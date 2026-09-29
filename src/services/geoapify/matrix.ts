@@ -81,8 +81,12 @@ export class GeoapifyMatrixService extends GeoapifyClient implements IGeoapifyMa
       location: [loc.coordinates.lng, loc.coordinates.lat],
     }));
 
+    // Route Matrix API supports: drive, bicycle, walk.
+    // For public transit, use road network baseline with transit timetable overhead scaling.
+    const matrixMode = apiMode === 'transit' ? 'drive' : apiMode;
+
     const body = {
-      mode: apiMode,
+      mode: matrixMode,
       sources: locationPoints,
       targets: locationPoints,
     };
@@ -125,7 +129,8 @@ export class GeoapifyMatrixService extends GeoapifyClient implements IGeoapifyMa
           flatMatrix[flatKey] = element;
           nestedMatrix[fromId][toId] = element;
         } else {
-          const durationSeconds = Math.round(item.time);
+          const durationMultiplier = validMode === 'transit' ? 1.3 : 1.0;
+          const durationSeconds = Math.round(item.time * durationMultiplier);
           const durationMinutes = Math.ceil(durationSeconds / 60);
 
           const element: RouteMatrixElement = {

@@ -143,7 +143,8 @@ export class GeoapifyGeocodingService extends GeoapifyClient {
     let responseText = '';
 
     try {
-      res = await fetch(url.toString());
+      const timeoutSignal = AbortSignal.timeout(10000);
+      res = await fetch(url.toString(), { signal: timeoutSignal });
       responseText = await res.text();
     } catch (networkErr: unknown) {
       const msg = networkErr instanceof Error ? networkErr.message : 'Network failure';
@@ -333,3 +334,17 @@ export class GeoapifyGeocodingService extends GeoapifyClient {
     };
   }
 }
+
+/**
+ * Standalone convenience wrapper for geocoding a single location.
+ * Supports both signatures: geocodeLocation(client, request) and geocodeLocation(request).
+ */
+export async function geocodeLocation(
+  clientOrRequest: GeoapifyClient | GeocodeRequest,
+  maybeRequest?: GeocodeRequest
+): Promise<GeocodeResult> {
+  const service = new GeoapifyGeocodingService();
+  const req = (maybeRequest || clientOrRequest) as GeocodeRequest;
+  return service.geocodeLocation(req);
+}
+

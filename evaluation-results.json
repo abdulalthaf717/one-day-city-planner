@@ -41,7 +41,7 @@
         "Charminar",
         "Lumbini Park & Laser Show"
       ],
-      "latencyMs": 1.6,
+      "latencyMs": 1.1,
       "validationResult": {
         "isValid": true,
         "errors": []
@@ -66,7 +66,7 @@
         "Lumbini Park & Laser Show",
         "Hussain Sagar & Tank Bund"
       ],
-      "latencyMs": 0.2,
+      "latencyMs": 0.1,
       "validationResult": {
         "isValid": true,
         "errors": []
@@ -92,7 +92,7 @@
         "Charminar",
         "Salar Jung Museum"
       ],
-      "latencyMs": 0.3,
+      "latencyMs": 0.1,
       "validationResult": {
         "isValid": true,
         "errors": []
@@ -118,7 +118,7 @@
         "Lumbini Park & Laser Show",
         "Hussain Sagar & Tank Bund"
       ],
-      "latencyMs": 0.1,
+      "latencyMs": 0,
       "validationResult": {
         "isValid": true,
         "errors": []
@@ -196,7 +196,7 @@
         "Lumbini Park & Laser Show",
         "Hussain Sagar & Tank Bund"
       ],
-      "latencyMs": 0.2,
+      "latencyMs": 0.1,
       "validationResult": {
         "isValid": true,
         "errors": []
@@ -247,7 +247,7 @@
         "Charminar",
         "Lumbini Park & Laser Show"
       ],
-      "latencyMs": 1,
+      "latencyMs": 0.9,
       "validationResult": {
         "isValid": true,
         "errors": []
@@ -300,7 +300,7 @@
         "Salar Jung Museum",
         "Paradise Biryani"
       ],
-      "latencyMs": 0.2,
+      "latencyMs": 0.1,
       "validationResult": {
         "isValid": true,
         "errors": []
@@ -325,7 +325,7 @@
         "Lumbini Park & Laser Show",
         "Hussain Sagar & Tank Bund"
       ],
-      "latencyMs": 0.1,
+      "latencyMs": 0,
       "validationResult": {
         "isValid": true,
         "errors": []
@@ -376,7 +376,7 @@
         "Paradise Biryani",
         "Lumbini Park & Laser Show"
       ],
-      "latencyMs": 0.5,
+      "latencyMs": 0.4,
       "validationResult": {
         "isValid": true,
         "errors": []
@@ -427,7 +427,7 @@
         "Lumbini Park & Laser Show",
         "Charminar"
       ],
-      "latencyMs": 0.1,
+      "latencyMs": 0,
       "validationResult": {
         "isValid": true,
         "errors": []
@@ -524,7 +524,7 @@
       "routeFeasible": true,
       "visitedStopsCount": 0,
       "visitedStopNames": [],
-      "latencyMs": 0,
+      "latencyMs": 0.1,
       "validationResult": {
         "isValid": true,
         "errors": []

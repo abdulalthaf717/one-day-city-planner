@@ -55,6 +55,7 @@ export function computeObjectiveScore(context: ObjectiveContext): {
   let religiousStopCount = 0;
   let ordinaryStatueCount = 0;
   let foodStopCount = 0;
+  let genericParkCount = 0;
 
   const wantsReligion = userInterests.some((i) =>
     /\b(relig|spirit|temple|church|mosque|masjid|worship|faith|shrine)\b/i.test(i)
@@ -62,10 +63,20 @@ export function computeObjectiveScore(context: ObjectiveContext): {
   const wantsFood = userInterests.some((i) =>
     /\b(food|dining|lunch|dinner|restaurant|cafe|culinary)\b/i.test(i)
   );
+  const wantsNature = userInterests.some((i) =>
+    /\b(nature|park|garden|outdoor|lake|botanic|wildlife)\b/i.test(i)
+  );
 
   for (const place of visitedPlaces) {
     const rel = place.touristRelevanceScore ?? 75;
-    touristRelevanceSum += Math.round((rel / 100) * 15);
+    // Major tourist cultural landmarks (Tier 1: 88-98) earn substantial utility
+    if (rel >= 85) {
+      touristRelevanceSum += 25;
+    } else if (rel >= 65) {
+      touristRelevanceSum += 16;
+    } else {
+      touristRelevanceSum += Math.round((rel / 100) * 8);
+    }
 
     if (place.placeType === 'SUPPORT_FOOD' || place.category === 'restaurant' || place.category === 'cafe') {
       foodStopCount++;
@@ -89,13 +100,20 @@ export function computeObjectiveScore(context: ObjectiveContext): {
     ) {
       ordinaryStatueCount++;
     }
+    const isGenericPark =
+      (place.category === 'park' || (place.categories || []).some((c) => c.startsWith('leisure.park'))) &&
+      !(place.categories || []).some((c) => c === 'leisure.park.garden' || c === 'leisure.nature_reserve') &&
+      !/\b(botanical|garden|national park|sanctuary|lake view|biodiversity)\b/i.test(place.name || '');
+    if (isGenericPark) {
+      genericParkCount++;
+    }
   }
 
   // 2. Interest Match Utility: Rewards places matching user interests (0 - 80 points)
   let interestUtility = 0;
   if (userInterests.length === 0) {
     // Balanced default trip: driven by genuine tourist attraction relevance
-    interestUtility = Math.min(60, touristRelevanceSum);
+    interestUtility = Math.min(80, touristRelevanceSum);
   } else {
     const interestSet = new Set(userInterests.map((i) => i.toLowerCase().trim()));
     for (const place of visitedPlaces) {
@@ -113,7 +131,7 @@ export function computeObjectiveScore(context: ObjectiveContext): {
   let qualityUtility = 0;
   for (const place of visitedPlaces) {
     if (typeof place.touristRelevanceScore === 'number' && place.touristRelevanceScore >= 85) {
-      qualityUtility += 15;
+      qualityUtility += 18;
     } else if (typeof place.qualityScore === 'number') {
       qualityUtility += place.qualityScore * 0.15;
     } else {
@@ -150,7 +168,7 @@ export function computeObjectiveScore(context: ObjectiveContext): {
   // 8. Uncertainty Penalty: Modest discount for unknown ticket costs or unverified hours
   const uncertaintyPenalty = Math.min(30, unknownCostCount * 4 + unverifiedHoursCount * 3);
 
-  // 9. Tourist Quality Penalty (penalizes unwanted neighborhood worship, statues, excess dining)
+  // 9. Tourist Quality Penalty (penalizes unwanted neighborhood worship, statues, excess dining, excess generic parks)
   let touristQualityPenalty = 0;
   if (!wantsReligion && religiousStopCount > 0) {
     // Ordinary neighborhood worship places heavily penalized if unrequested
@@ -161,6 +179,10 @@ export function computeObjectiveScore(context: ObjectiveContext): {
   }
   if (!wantsFood && foodStopCount > 1) {
     touristQualityPenalty += 30 * (foodStopCount - 1);
+  }
+  if (!wantsNature && genericParkCount > 1) {
+    // Ordinary municipal neighborhood parks downweighted when general city tour requested
+    touristQualityPenalty += 30 * (genericParkCount - 1);
   }
 
   // Composite Score

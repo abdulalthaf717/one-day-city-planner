@@ -1,0 +1,35 @@
+{
+  "timestamp": "2026-09-29T04:20:13.771Z",
+  "validation_status": "PASSED",
+  "summary": {
+    "total_cases": 100,
+    "development_count": 78,
+    "holdout_count": 22,
+    "unique_ids_count": 100
+  },
+  "distributions": {
+    "city_distribution": {
+      "Hyderabad": 34,
+      "Bengaluru": 33,
+      "Chennai": 33
+    },
+    "difficulty_distribution": {
+      "Medium": 45,
+      "Hard": 26,
+      "Extreme": 16,
+      "Easy": 13
+    },
+    "change_scenarios": 22,
+    "multimodal_cases": 10,
+    "failure_edge_cases": 19
+  },
+  "integrity_checks": {
+    "exact_78_dev_cases": true,
+    "exact_22_holdout_cases": true,
+    "exact_100_total_cases": true,
+    "no_duplicate_case_ids": true,
+    "required_fields_present": true,
+    "json_csv_consistent": true
+  },
+  "errors": []
+}
