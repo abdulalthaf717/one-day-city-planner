@@ -1,0 +1,2201 @@
+[
+  {
+    "case_id": "079",
+    "city": "Hyderabad",
+    "difficulty": "Easy",
+    "scenario": "Transit short.",
+    "latency_ms": 4266,
+    "api_error": null,
+    "initial_plan": {
+      "success": true,
+      "stop_count": 6,
+      "total_cost": 0,
+      "start_time": "10:00",
+      "end_arrival_time": "15:00",
+      "total_travel_minutes": 24,
+      "total_visit_minutes": 0,
+      "safety_buffer_minutes": 0,
+      "stops": [
+        {
+          "name": "MGBS",
+          "category": "start",
+          "arrival": "10:00",
+          "departure": "10:00",
+          "cost": 0
+        },
+        {
+          "name": "Moazzam Jahi Market",
+          "category": "historic",
+          "arrival": "10:05",
+          "departure": "10:35",
+          "cost": 0
+        },
+        {
+          "name": "Telangana State Archaeology Museum",
+          "category": "museum",
+          "arrival": "10:39",
+          "departure": "12:09",
+          "cost": 0
+        },
+        {
+          "name": "Hill Fort",
+          "category": "attraction",
+          "arrival": "12:11",
+          "departure": "13:41",
+          "cost": 0
+        },
+        {
+          "name": "Butterfly Garden Park",
+          "category": "park",
+          "arrival": "13:50",
+          "departure": "14:35",
+          "cost": 0
+        },
+        {
+          "name": "Hotel",
+          "category": "end",
+          "arrival": "14:39",
+          "departure": "14:39",
+          "cost": 0
+        }
+      ],
+      "selected_place_names": [
+        "MGBS",
+        "Moazzam Jahi Market",
+        "Telangana State Archaeology Museum",
+        "Hill Fort",
+        "Butterfly Garden Park",
+        "Hotel"
+      ]
+    },
+    "replanning": null,
+    "hard_constraints": {
+      "start_point_respected": true,
+      "end_point_respected": true,
+      "start_time_respected": true,
+      "deadline_respected": true,
+      "budget_respected": true,
+      "travel_mode_respected": true,
+      "opening_hours_respected": true,
+      "route_feasibility_respected": true,
+      "no_overlapping_activities": true,
+      "no_impossible_travel": true,
+      "overall_hard_satisfied": true,
+      "no_fabrication": true
+    },
+    "soft_quality": {
+      "tourist_relevance_score": 1,
+      "interest_relevance_score": 0,
+      "travel_efficiency_score": 91,
+      "useful_time_utilization": 93,
+      "stop_count": 6,
+      "safety_buffer_minutes": 0,
+      "total_cost": 0,
+      "selected_places": [
+        "MGBS",
+        "Moazzam Jahi Market",
+        "Telangana State Archaeology Museum",
+        "Hill Fort",
+        "Butterfly Garden Park",
+        "Hotel"
+      ],
+      "no_fabrication": true
+    },
+    "failure_diagnostics": {
+      "status": "PASS",
+      "reasons": [],
+      "failure_category": "NONE",
+      "responsible_subsystem": "NONE"
+    }
+  },
+  {
+    "case_id": "080",
+    "city": "Hyderabad",
+    "difficulty": "Medium",
+    "scenario": "Family default.",
+    "latency_ms": 6041,
+    "api_error": null,
+    "initial_plan": {
+      "success": true,
+      "stop_count": 6,
+      "total_cost": 0,
+      "start_time": "09:00",
+      "end_arrival_time": "18:00",
+      "total_travel_minutes": 21,
+      "total_visit_minutes": 0,
+      "safety_buffer_minutes": 0,
+      "stops": [
+        {
+          "name": "Hotel",
+          "category": "start",
+          "arrival": "09:00",
+          "departure": "09:00",
+          "cost": 0
+        },
+        {
+          "name": "Hill Fort",
+          "category": "attraction",
+          "arrival": "09:07",
+          "departure": "10:37",
+          "cost": 0
+        },
+        {
+          "name": "Saifabad Mint Museum",
+          "category": "museum",
+          "arrival": "10:40",
+          "departure": "12:10",
+          "cost": 0
+        },
+        {
+          "name": "Khairunissa Tomb",
+          "category": "historic",
+          "arrival": "12:11",
+          "departure": "13:26",
+          "cost": 0
+        },
+        {
+          "name": "Rock Garden",
+          "category": "park",
+          "arrival": "13:32",
+          "departure": "14:17",
+          "cost": 0
+        },
+        {
+          "name": "Hotel",
+          "category": "end",
+          "arrival": "14:21",
+          "departure": "14:21",
+          "cost": 0
+        }
+      ],
+      "selected_place_names": [
+        "Hotel",
+        "Hill Fort",
+        "Saifabad Mint Museum",
+        "Khairunissa Tomb",
+        "Rock Garden",
+        "Hotel"
+      ]
+    },
+    "replanning": null,
+    "hard_constraints": {
+      "start_point_respected": true,
+      "end_point_respected": true,
+      "start_time_respected": true,
+      "deadline_respected": true,
+      "budget_respected": true,
+      "travel_mode_respected": true,
+      "opening_hours_respected": true,
+      "route_feasibility_respected": true,
+      "no_overlapping_activities": true,
+      "no_impossible_travel": true,
+      "overall_hard_satisfied": true,
+      "no_fabrication": true
+    },
+    "soft_quality": {
+      "tourist_relevance_score": 1,
+      "interest_relevance_score": 0,
+      "travel_efficiency_score": 93,
+      "useful_time_utilization": 59,
+      "stop_count": 6,
+      "safety_buffer_minutes": 0,
+      "total_cost": 0,
+      "selected_places": [
+        "Hotel",
+        "Hill Fort",
+        "Saifabad Mint Museum",
+        "Khairunissa Tomb",
+        "Rock Garden",
+        "Hotel"
+      ],
+      "no_fabrication": true
+    },
+    "failure_diagnostics": {
+      "status": "PASS",
+      "reasons": [],
+      "failure_category": "NONE",
+      "responsible_subsystem": "NONE"
+    }
+  },
+  {
+    "case_id": "081",
+    "city": "Hyderabad",
+    "difficulty": "Medium",
+    "scenario": "Change add.",
+    "latency_ms": 5443,
+    "api_error": null,
+    "initial_plan": {
+      "success": true,
+      "stop_count": 6,
+      "total_cost": 0,
+      "start_time": "10:00",
+      "end_arrival_time": "17:00",
+      "total_travel_minutes": 20,
+      "total_visit_minutes": 0,
+      "safety_buffer_minutes": 0,
+      "stops": [
+        {
+          "name": "Hotel",
+          "category": "start",
+          "arrival": "10:00",
+          "departure": "10:00",
+          "cost": 0
+        },
+        {
+          "name": "Hill Fort",
+          "category": "attraction",
+          "arrival": "10:07",
+          "departure": "11:37",
+          "cost": 0
+        },
+        {
+          "name": "Saifabad Mint Museum",
+          "category": "museum",
+          "arrival": "11:40",
+          "departure": "13:10",
+          "cost": 0
+        },
+        {
+          "name": "Khairunissa Tomb",
+          "category": "historic",
+          "arrival": "13:11",
+          "departure": "14:26",
+          "cost": 0
+        },
+        {
+          "name": "Rose Garden",
+          "category": "park",
+          "arrival": "14:32",
+          "departure": "15:17",
+          "cost": 0
+        },
+        {
+          "name": "Hotel",
+          "category": "end",
+          "arrival": "15:20",
+          "departure": "15:20",
+          "cost": 0
+        }
+      ],
+      "selected_place_names": [
+        "Hotel",
+        "Hill Fort",
+        "Saifabad Mint Museum",
+        "Khairunissa Tomb",
+        "Rose Garden",
+        "Hotel"
+      ]
+    },
+    "replanning": {
+      "request": "Add Golconda.",
+      "success": true,
+      "new_stop_count": 6,
+      "new_total_cost": 0,
+      "reused_components": [
+        "candidates"
+      ]
+    },
+    "hard_constraints": {
+      "start_point_respected": true,
+      "end_point_respected": true,
+      "start_time_respected": true,
+      "deadline_respected": true,
+      "budget_respected": true,
+      "travel_mode_respected": true,
+      "opening_hours_respected": true,
+      "route_feasibility_respected": true,
+      "no_overlapping_activities": true,
+      "no_impossible_travel": true,
+      "overall_hard_satisfied": true,
+      "no_fabrication": true
+    },
+    "soft_quality": {
+      "tourist_relevance_score": 1,
+      "interest_relevance_score": 0,
+      "travel_efficiency_score": 94,
+      "useful_time_utilization": 76,
+      "stop_count": 6,
+      "safety_buffer_minutes": 0,
+      "total_cost": 0,
+      "selected_places": [
+        "Hotel",
+        "Hill Fort",
+        "Saifabad Mint Museum",
+        "Khairunissa Tomb",
+        "Rose Garden",
+        "Hotel"
+      ],
+      "no_fabrication": true
+    },
+    "failure_diagnostics": {
+      "status": "PASS",
+      "reasons": [],
+      "failure_category": "NONE",
+      "responsible_subsystem": "NONE"
+    }
+  },
+  {
+    "case_id": "082",
+    "city": "Hyderabad",
+    "difficulty": "Hard",
+    "scenario": "Airport layover.",
+    "latency_ms": 5969,
+    "api_error": null,
+    "initial_plan": {
+      "success": true,
+      "stop_count": 5,
+      "total_cost": 0,
+      "start_time": "12:00",
+      "end_arrival_time": "16:00",
+      "total_travel_minutes": 32,
+      "total_visit_minutes": 0,
+      "safety_buffer_minutes": 0,
+      "stops": [
+        {
+          "name": "Begumpet Airport",
+          "category": "start",
+          "arrival": "12:00",
+          "departure": "12:00",
+          "cost": 0
+        },
+        {
+          "name": "Rock Garden",
+          "category": "park",
+          "arrival": "12:06",
+          "departure": "12:51",
+          "cost": 0
+        },
+        {
+          "name": "Saifabad Mint Museum",
+          "category": "museum",
+          "arrival": "12:56",
+          "departure": "14:26",
+          "cost": 0
+        },
+        {
+          "name": "Arts College",
+          "category": "historic",
+          "arrival": "14:36",
+          "departure": "15:06",
+          "cost": 0
+        },
+        {
+          "name": "Begumpet Airport",
+          "category": "end",
+          "arrival": "15:17",
+          "departure": "15:17",
+          "cost": 0
+        }
+      ],
+      "selected_place_names": [
+        "Begumpet Airport",
+        "Rock Garden",
+        "Saifabad Mint Museum",
+        "Arts College",
+        "Begumpet Airport"
+      ]
+    },
+    "replanning": null,
+    "hard_constraints": {
+      "start_point_respected": true,
+      "end_point_respected": true,
+      "start_time_respected": true,
+      "deadline_respected": true,
+      "budget_respected": true,
+      "travel_mode_respected": true,
+      "opening_hours_respected": true,
+      "route_feasibility_respected": true,
+      "no_overlapping_activities": true,
+      "no_impossible_travel": true,
+      "overall_hard_satisfied": true,
+      "no_fabrication": true
+    },
+    "soft_quality": {
+      "tourist_relevance_score": 1,
+      "interest_relevance_score": 0,
+      "travel_efficiency_score": 84,
+      "useful_time_utilization": 82,
+      "stop_count": 5,
+      "safety_buffer_minutes": 0,
+      "total_cost": 0,
+      "selected_places": [
+        "Begumpet Airport",
+        "Rock Garden",
+        "Saifabad Mint Museum",
+        "Arts College",
+        "Begumpet Airport"
+      ],
+      "no_fabrication": true
+    },
+    "failure_diagnostics": {
+      "status": "PASS",
+      "reasons": [],
+      "failure_category": "NONE",
+      "responsible_subsystem": "NONE"
+    }
+  },
+  {
+    "case_id": "083",
+    "city": "Hyderabad",
+    "difficulty": "Hard",
+    "scenario": "Large group budget.",
+    "latency_ms": 1954,
+    "api_error": null,
+    "initial_plan": {
+      "success": true,
+      "stop_count": 6,
+      "total_cost": 0,
+      "start_time": "09:00",
+      "end_arrival_time": "17:00",
+      "total_travel_minutes": 27,
+      "total_visit_minutes": 0,
+      "safety_buffer_minutes": 0,
+      "stops": [
+        {
+          "name": "Hotel",
+          "category": "start",
+          "arrival": "09:00",
+          "departure": "09:00",
+          "cost": 0
+        },
+        {
+          "name": "B M Birla Science Museum",
+          "category": "museum",
+          "arrival": "09:10",
+          "departure": "10:40",
+          "cost": 0
+        },
+        {
+          "name": "Telangana State Archaeology Museum",
+          "category": "museum",
+          "arrival": "10:43",
+          "departure": "12:13",
+          "cost": 0
+        },
+        {
+          "name": "B.R.Ambedkar Statue",
+          "category": "museum",
+          "arrival": "12:17",
+          "departure": "13:47",
+          "cost": 0
+        },
+        {
+          "name": "Saifabad Mint Museum",
+          "category": "museum",
+          "arrival": "13:49",
+          "departure": "15:19",
+          "cost": 0
+        },
+        {
+          "name": "Hotel",
+          "category": "end",
+          "arrival": "15:27",
+          "departure": "15:27",
+          "cost": 0
+        }
+      ],
+      "selected_place_names": [
+        "Hotel",
+        "B M Birla Science Museum",
+        "Telangana State Archaeology Museum",
+        "B.R.Ambedkar Statue",
+        "Saifabad Mint Museum",
+        "Hotel"
+      ]
+    },
+    "replanning": null,
+    "hard_constraints": {
+      "start_point_respected": true,
+      "end_point_respected": true,
+      "start_time_respected": true,
+      "deadline_respected": true,
+      "budget_respected": true,
+      "travel_mode_respected": true,
+      "opening_hours_respected": true,
+      "route_feasibility_respected": true,
+      "no_overlapping_activities": true,
+      "no_impossible_travel": true,
+      "overall_hard_satisfied": true,
+      "no_fabrication": true
+    },
+    "soft_quality": {
+      "tourist_relevance_score": 1,
+      "interest_relevance_score": 0,
+      "travel_efficiency_score": 93,
+      "useful_time_utilization": 81,
+      "stop_count": 6,
+      "safety_buffer_minutes": 0,
+      "total_cost": 0,
+      "selected_places": [
+        "Hotel",
+        "B M Birla Science Museum",
+        "Telangana State Archaeology Museum",
+        "B.R.Ambedkar Statue",
+        "Saifabad Mint Museum",
+        "Hotel"
+      ],
+      "no_fabrication": true
+    },
+    "failure_diagnostics": {
+      "status": "PASS",
+      "reasons": [],
+      "failure_category": "NONE",
+      "responsible_subsystem": "NONE"
+    }
+  },
+  {
+    "case_id": "084",
+    "city": "Hyderabad",
+    "difficulty": "Hard",
+    "scenario": "Friday constraint.",
+    "latency_ms": 6248,
+    "api_error": null,
+    "initial_plan": {
+      "success": true,
+      "stop_count": 6,
+      "total_cost": 0,
+      "start_time": "09:00",
+      "end_arrival_time": "18:00",
+      "total_travel_minutes": 19,
+      "total_visit_minutes": 0,
+      "safety_buffer_minutes": 0,
+      "stops": [
+        {
+          "name": "Hotel",
+          "category": "start",
+          "arrival": "09:00",
+          "departure": "09:00",
+          "cost": 0
+        },
+        {
+          "name": "Hill Fort",
+          "category": "attraction",
+          "arrival": "09:07",
+          "departure": "10:37",
+          "cost": 0
+        },
+        {
+          "name": "Telangana State Archaeology Museum",
+          "category": "museum",
+          "arrival": "10:39",
+          "departure": "12:09",
+          "cost": 0
+        },
+        {
+          "name": "Saifabad Mint Museum",
+          "category": "museum",
+          "arrival": "12:11",
+          "departure": "13:41",
+          "cost": 0
+        },
+        {
+          "name": "Khairunissa Tomb",
+          "category": "historic",
+          "arrival": "13:42",
+          "departure": "14:57",
+          "cost": 0
+        },
+        {
+          "name": "Hotel",
+          "category": "end",
+          "arrival": "15:04",
+          "departure": "15:04",
+          "cost": 0
+        }
+      ],
+      "selected_place_names": [
+        "Hotel",
+        "Hill Fort",
+        "Telangana State Archaeology Museum",
+        "Saifabad Mint Museum",
+        "Khairunissa Tomb",
+        "Hotel"
+      ]
+    },
+    "replanning": null,
+    "hard_constraints": {
+      "start_point_respected": true,
+      "end_point_respected": true,
+      "start_time_respected": true,
+      "deadline_respected": true,
+      "budget_respected": true,
+      "travel_mode_respected": true,
+      "opening_hours_respected": true,
+      "route_feasibility_respected": true,
+      "no_overlapping_activities": true,
+      "no_impossible_travel": true,
+      "overall_hard_satisfied": true,
+      "no_fabrication": true
+    },
+    "soft_quality": {
+      "tourist_relevance_score": 1,
+      "interest_relevance_score": 0,
+      "travel_efficiency_score": 95,
+      "useful_time_utilization": 67,
+      "stop_count": 6,
+      "safety_buffer_minutes": 0,
+      "total_cost": 0,
+      "selected_places": [
+        "Hotel",
+        "Hill Fort",
+        "Telangana State Archaeology Museum",
+        "Saifabad Mint Museum",
+        "Khairunissa Tomb",
+        "Hotel"
+      ],
+      "no_fabrication": true
+    },
+    "failure_diagnostics": {
+      "status": "PASS",
+      "reasons": [],
+      "failure_category": "NONE",
+      "responsible_subsystem": "NONE"
+    }
+  },
+  {
+    "case_id": "085",
+    "city": "Hyderabad",
+    "difficulty": "Extreme",
+    "scenario": "One hour window.",
+    "latency_ms": 3781,
+    "api_error": null,
+    "initial_plan": {
+      "success": true,
+      "stop_count": 2,
+      "total_cost": 0,
+      "start_time": "14:00",
+      "end_arrival_time": "15:00",
+      "total_travel_minutes": 0,
+      "total_visit_minutes": 0,
+      "safety_buffer_minutes": 0,
+      "stops": [
+        {
+          "name": "Hotel",
+          "category": "start",
+          "arrival": "14:00",
+          "departure": "14:00",
+          "cost": 0
+        },
+        {
+          "name": "MGBS",
+          "category": "end",
+          "arrival": "15:00",
+          "departure": "15:00",
+          "cost": 0
+        }
+      ],
+      "selected_place_names": [
+        "Hotel",
+        "MGBS"
+      ]
+    },
+    "replanning": null,
+    "hard_constraints": {
+      "start_point_respected": true,
+      "end_point_respected": true,
+      "start_time_respected": true,
+      "deadline_respected": true,
+      "budget_respected": true,
+      "travel_mode_respected": true,
+      "opening_hours_respected": true,
+      "route_feasibility_respected": true,
+      "no_overlapping_activities": true,
+      "no_impossible_travel": true,
+      "overall_hard_satisfied": true
+    },
+    "soft_quality": {
+      "tourist_relevance_score": 1,
+      "interest_relevance_score": 0,
+      "travel_efficiency_score": 0,
+      "useful_time_utilization": 0,
+      "stop_count": 2,
+      "safety_buffer_minutes": 0,
+      "total_cost": 0,
+      "selected_places": [
+        "Hotel",
+        "MGBS"
+      ],
+      "no_fabrication": true
+    },
+    "failure_diagnostics": {
+      "status": "PASS",
+      "reasons": [
+        "Infeasible edge-case correctly identified without fabricating impossible routes."
+      ],
+      "failure_category": "NONE",
+      "responsible_subsystem": "NONE"
+    }
+  },
+  {
+    "case_id": "086",
+    "city": "Hyderabad",
+    "difficulty": "Extreme",
+    "scenario": "Start shift away.",
+    "latency_ms": 3349,
+    "api_error": null,
+    "initial_plan": {
+      "success": true,
+      "stop_count": 6,
+      "total_cost": 0,
+      "start_time": "10:00",
+      "end_arrival_time": "16:00",
+      "total_travel_minutes": 19,
+      "total_visit_minutes": 0,
+      "safety_buffer_minutes": 0,
+      "stops": [
+        {
+          "name": "Charminar",
+          "category": "start",
+          "arrival": "10:00",
+          "departure": "10:00",
+          "cost": 0
+        },
+        {
+          "name": "Gulzar houz (fountain)",
+          "category": "historic",
+          "arrival": "10:03",
+          "departure": "11:18",
+          "cost": 0
+        },
+        {
+          "name": "Moazzam Jahi Market",
+          "category": "historic",
+          "arrival": "11:22",
+          "departure": "11:52",
+          "cost": 0
+        },
+        {
+          "name": "Telangana State Archaeology Museum",
+          "category": "museum",
+          "arrival": "11:55",
+          "departure": "13:25",
+          "cost": 0
+        },
+        {
+          "name": "Hill Fort",
+          "category": "attraction",
+          "arrival": "13:27",
+          "departure": "14:57",
+          "cost": 0
+        },
+        {
+          "name": "Hotel",
+          "category": "end",
+          "arrival": "15:04",
+          "departure": "15:04",
+          "cost": 0
+        }
+      ],
+      "selected_place_names": [
+        "Charminar",
+        "Gulzar houz (fountain)",
+        "Moazzam Jahi Market",
+        "Telangana State Archaeology Museum",
+        "Hill Fort",
+        "Hotel"
+      ]
+    },
+    "replanning": {
+      "request": "Start point shifts to Ramoji Film City (30km away).",
+      "success": true,
+      "new_stop_count": 5,
+      "new_total_cost": 0,
+      "reused_components": [
+        "candidates"
+      ]
+    },
+    "hard_constraints": {
+      "start_point_respected": true,
+      "end_point_respected": true,
+      "start_time_respected": true,
+      "deadline_respected": true,
+      "budget_respected": true,
+      "travel_mode_respected": true,
+      "opening_hours_respected": true,
+      "route_feasibility_respected": true,
+      "no_overlapping_activities": true,
+      "no_impossible_travel": true,
+      "overall_hard_satisfied": true,
+      "no_fabrication": true
+    },
+    "soft_quality": {
+      "tourist_relevance_score": 1,
+      "interest_relevance_score": 0,
+      "travel_efficiency_score": 94,
+      "useful_time_utilization": 84,
+      "stop_count": 6,
+      "safety_buffer_minutes": 0,
+      "total_cost": 0,
+      "selected_places": [
+        "Charminar",
+        "Gulzar houz (fountain)",
+        "Moazzam Jahi Market",
+        "Telangana State Archaeology Museum",
+        "Hill Fort",
+        "Hotel"
+      ],
+      "no_fabrication": true
+    },
+    "failure_diagnostics": {
+      "status": "PASS",
+      "reasons": [],
+      "failure_category": "NONE",
+      "responsible_subsystem": "NONE"
+    }
+  },
+  {
+    "case_id": "087",
+    "city": "Bengaluru",
+    "difficulty": "Easy",
+    "scenario": "Walk short.",
+    "latency_ms": 1709,
+    "api_error": null,
+    "initial_plan": {
+      "success": true,
+      "stop_count": 3,
+      "total_cost": 0,
+      "start_time": "10:00",
+      "end_arrival_time": "14:00",
+      "total_travel_minutes": 25,
+      "total_visit_minutes": 0,
+      "safety_buffer_minutes": 0,
+      "stops": [
+        {
+          "name": "Cubbon Park",
+          "category": "start",
+          "arrival": "10:00",
+          "departure": "10:00",
+          "cost": 0
+        },
+        {
+          "name": "Jawahar Bal Bhavan",
+          "category": "park",
+          "arrival": "10:30",
+          "departure": "11:15",
+          "cost": 0
+        },
+        {
+          "name": "MG Road Boulevard",
+          "category": "end",
+          "arrival": "11:26",
+          "departure": "11:26",
+          "cost": 0
+        }
+      ],
+      "selected_place_names": [
+        "Cubbon Park",
+        "Jawahar Bal Bhavan",
+        "MG Road Boulevard"
+      ]
+    },
+    "replanning": null,
+    "hard_constraints": {
+      "start_point_respected": true,
+      "end_point_respected": true,
+      "start_time_respected": true,
+      "deadline_respected": true,
+      "budget_respected": true,
+      "travel_mode_respected": true,
+      "opening_hours_respected": true,
+      "route_feasibility_respected": true,
+      "no_overlapping_activities": true,
+      "no_impossible_travel": true,
+      "overall_hard_satisfied": true,
+      "no_fabrication": true
+    },
+    "soft_quality": {
+      "tourist_relevance_score": 0,
+      "interest_relevance_score": 0,
+      "travel_efficiency_score": 64,
+      "useful_time_utilization": 29,
+      "stop_count": 3,
+      "safety_buffer_minutes": 0,
+      "total_cost": 0,
+      "selected_places": [
+        "Cubbon Park",
+        "Jawahar Bal Bhavan",
+        "MG Road Boulevard"
+      ],
+      "no_fabrication": true
+    },
+    "failure_diagnostics": {
+      "status": "PARTIAL",
+      "reasons": [],
+      "failure_category": "NONE",
+      "responsible_subsystem": "NONE"
+    }
+  },
+  {
+    "case_id": "088",
+    "city": "Bengaluru",
+    "difficulty": "Medium",
+    "scenario": "Change to Metro.",
+    "latency_ms": 4865,
+    "api_error": null,
+    "initial_plan": {
+      "success": true,
+      "stop_count": 6,
+      "total_cost": 0,
+      "start_time": "09:00",
+      "end_arrival_time": "18:00",
+      "total_travel_minutes": 22,
+      "total_visit_minutes": 0,
+      "safety_buffer_minutes": 0,
+      "stops": [
+        {
+          "name": "Hotel Paraag",
+          "category": "start",
+          "arrival": "09:00",
+          "departure": "09:00",
+          "cost": 0
+        },
+        {
+          "name": "Bangalore Fort",
+          "category": "attraction",
+          "arrival": "09:07",
+          "departure": "10:07",
+          "cost": 0
+        },
+        {
+          "name": "Visvesvaraya Industrial and Technology Museum",
+          "category": "museum",
+          "arrival": "10:12",
+          "departure": "11:42",
+          "cost": 0
+        },
+        {
+          "name": "Vidhana Soudha",
+          "category": "historic",
+          "arrival": "11:48",
+          "departure": "13:03",
+          "cost": 0
+        },
+        {
+          "name": "Raj Bhavan Gardens",
+          "category": "park",
+          "arrival": "13:04",
+          "departure": "13:49",
+          "cost": 0
+        },
+        {
+          "name": "Hotel Paraag",
+          "category": "end",
+          "arrival": "13:52",
+          "departure": "13:52",
+          "cost": 0
+        }
+      ],
+      "selected_place_names": [
+        "Hotel Paraag",
+        "Bangalore Fort",
+        "Visvesvaraya Industrial and Technology Museum",
+        "Vidhana Soudha",
+        "Raj Bhavan Gardens",
+        "Hotel Paraag"
+      ]
+    },
+    "replanning": {
+      "request": "Traffic warning -> Change mode to Transit.",
+      "success": true,
+      "new_stop_count": 6,
+      "new_total_cost": 0,
+      "reused_components": [
+        "candidates"
+      ]
+    },
+    "hard_constraints": {
+      "start_point_respected": true,
+      "end_point_respected": true,
+      "start_time_respected": true,
+      "deadline_respected": true,
+      "budget_respected": true,
+      "travel_mode_respected": true,
+      "opening_hours_respected": true,
+      "route_feasibility_respected": true,
+      "no_overlapping_activities": true,
+      "no_impossible_travel": true,
+      "overall_hard_satisfied": true,
+      "no_fabrication": true
+    },
+    "soft_quality": {
+      "tourist_relevance_score": 1,
+      "interest_relevance_score": 0,
+      "travel_efficiency_score": 92,
+      "useful_time_utilization": 54,
+      "stop_count": 6,
+      "safety_buffer_minutes": 0,
+      "total_cost": 0,
+      "selected_places": [
+        "Hotel Paraag",
+        "Bangalore Fort",
+        "Visvesvaraya Industrial and Technology Museum",
+        "Vidhana Soudha",
+        "Raj Bhavan Gardens",
+        "Hotel Paraag"
+      ],
+      "no_fabrication": true
+    },
+    "failure_diagnostics": {
+      "status": "PASS",
+      "reasons": [],
+      "failure_category": "NONE",
+      "responsible_subsystem": "NONE"
+    }
+  },
+  {
+    "case_id": "089",
+    "city": "Bengaluru",
+    "difficulty": "Medium",
+    "scenario": "Monday constraint.",
+    "latency_ms": 5597,
+    "api_error": null,
+    "initial_plan": {
+      "success": true,
+      "stop_count": 6,
+      "total_cost": 0,
+      "start_time": "10:00",
+      "end_arrival_time": "17:00",
+      "total_travel_minutes": 23,
+      "total_visit_minutes": 0,
+      "safety_buffer_minutes": 0,
+      "stops": [
+        {
+          "name": "Hotel Paraag",
+          "category": "start",
+          "arrival": "10:00",
+          "departure": "10:00",
+          "cost": 0
+        },
+        {
+          "name": "Smt. Kamalabai Educational Institution",
+          "category": "historic",
+          "arrival": "10:04",
+          "departure": "11:19",
+          "cost": 0
+        },
+        {
+          "name": "Bangalore Fort",
+          "category": "attraction",
+          "arrival": "11:26",
+          "departure": "12:26",
+          "cost": 0
+        },
+        {
+          "name": "Karnataka Government Museum",
+          "category": "museum",
+          "arrival": "12:31",
+          "departure": "14:01",
+          "cost": 0
+        },
+        {
+          "name": "Raj Bhavan Gardens",
+          "category": "park",
+          "arrival": "14:05",
+          "departure": "14:50",
+          "cost": 0
+        },
+        {
+          "name": "Hotel Paraag",
+          "category": "end",
+          "arrival": "14:53",
+          "departure": "14:53",
+          "cost": 0
+        }
+      ],
+      "selected_place_names": [
+        "Hotel Paraag",
+        "Smt. Kamalabai Educational Institution",
+        "Bangalore Fort",
+        "Karnataka Government Museum",
+        "Raj Bhavan Gardens",
+        "Hotel Paraag"
+      ]
+    },
+    "replanning": null,
+    "hard_constraints": {
+      "start_point_respected": true,
+      "end_point_respected": true,
+      "start_time_respected": true,
+      "deadline_respected": true,
+      "budget_respected": true,
+      "travel_mode_respected": true,
+      "opening_hours_respected": true,
+      "route_feasibility_respected": true,
+      "no_overlapping_activities": true,
+      "no_impossible_travel": true,
+      "overall_hard_satisfied": true,
+      "no_fabrication": true
+    },
+    "soft_quality": {
+      "tourist_relevance_score": 1,
+      "interest_relevance_score": 0,
+      "travel_efficiency_score": 92,
+      "useful_time_utilization": 70,
+      "stop_count": 6,
+      "safety_buffer_minutes": 0,
+      "total_cost": 0,
+      "selected_places": [
+        "Hotel Paraag",
+        "Smt. Kamalabai Educational Institution",
+        "Bangalore Fort",
+        "Karnataka Government Museum",
+        "Raj Bhavan Gardens",
+        "Hotel Paraag"
+      ],
+      "no_fabrication": true
+    },
+    "failure_diagnostics": {
+      "status": "PASS",
+      "reasons": [],
+      "failure_category": "NONE",
+      "responsible_subsystem": "NONE"
+    }
+  },
+  {
+    "case_id": "090",
+    "city": "Bengaluru",
+    "difficulty": "Hard",
+    "scenario": "Tuesday constraint.",
+    "latency_ms": 6665,
+    "api_error": null,
+    "initial_plan": {
+      "success": true,
+      "stop_count": 6,
+      "total_cost": 0,
+      "start_time": "09:00",
+      "end_arrival_time": "17:00",
+      "total_travel_minutes": 15,
+      "total_visit_minutes": 0,
+      "safety_buffer_minutes": 0,
+      "stops": [
+        {
+          "name": "Hotel Paraag",
+          "category": "start",
+          "arrival": "09:00",
+          "departure": "09:00",
+          "cost": 0
+        },
+        {
+          "name": "Vidhana Soudha",
+          "category": "historic",
+          "arrival": "09:04",
+          "departure": "10:19",
+          "cost": 0
+        },
+        {
+          "name": "Raj Bhavan Gardens",
+          "category": "park",
+          "arrival": "10:20",
+          "departure": "11:05",
+          "cost": 0
+        },
+        {
+          "name": "Traffic Police Museum",
+          "category": "museum",
+          "arrival": "11:08",
+          "departure": "12:38",
+          "cost": 0
+        },
+        {
+          "name": "Rose Garden",
+          "category": "park",
+          "arrival": "12:42",
+          "departure": "13:27",
+          "cost": 0
+        },
+        {
+          "name": "Hotel Paraag",
+          "category": "end",
+          "arrival": "13:30",
+          "departure": "13:30",
+          "cost": 0
+        }
+      ],
+      "selected_place_names": [
+        "Hotel Paraag",
+        "Vidhana Soudha",
+        "Raj Bhavan Gardens",
+        "Traffic Police Museum",
+        "Rose Garden",
+        "Hotel Paraag"
+      ]
+    },
+    "replanning": null,
+    "hard_constraints": {
+      "start_point_respected": true,
+      "end_point_respected": true,
+      "start_time_respected": true,
+      "deadline_respected": true,
+      "budget_respected": true,
+      "travel_mode_respected": true,
+      "opening_hours_respected": true,
+      "route_feasibility_respected": true,
+      "no_overlapping_activities": true,
+      "no_impossible_travel": true,
+      "overall_hard_satisfied": true,
+      "no_fabrication": true
+    },
+    "soft_quality": {
+      "tourist_relevance_score": 1,
+      "interest_relevance_score": 0,
+      "travel_efficiency_score": 94,
+      "useful_time_utilization": 56,
+      "stop_count": 6,
+      "safety_buffer_minutes": 0,
+      "total_cost": 0,
+      "selected_places": [
+        "Hotel Paraag",
+        "Vidhana Soudha",
+        "Raj Bhavan Gardens",
+        "Traffic Police Museum",
+        "Rose Garden",
+        "Hotel Paraag"
+      ],
+      "no_fabrication": true
+    },
+    "failure_diagnostics": {
+      "status": "PASS",
+      "reasons": [],
+      "failure_category": "NONE",
+      "responsible_subsystem": "NONE"
+    }
+  },
+  {
+    "case_id": "091",
+    "city": "Bengaluru",
+    "difficulty": "Hard",
+    "scenario": "Silk Board Peak.",
+    "latency_ms": 7799,
+    "api_error": null,
+    "initial_plan": {
+      "success": true,
+      "stop_count": 4,
+      "total_cost": 200,
+      "start_time": "17:00",
+      "end_arrival_time": "19:00",
+      "total_travel_minutes": 7,
+      "total_visit_minutes": 0,
+      "safety_buffer_minutes": 0,
+      "stops": [
+        {
+          "name": "BMTC Depot 25 (HSR Layout)",
+          "category": "start",
+          "arrival": "17:00",
+          "departure": "17:00",
+          "cost": 0
+        },
+        {
+          "name": "Teatings",
+          "category": "cafe",
+          "arrival": "17:03",
+          "departure": "17:38",
+          "cost": 200
+        },
+        {
+          "name": "Om Chandi Arts",
+          "category": "attraction",
+          "arrival": "17:40",
+          "departure": "18:40",
+          "cost": 0
+        },
+        {
+          "name": "Madiwala",
+          "category": "end",
+          "arrival": "18:42",
+          "departure": "18:42",
+          "cost": 0
+        }
+      ],
+      "selected_place_names": [
+        "BMTC Depot 25 (HSR Layout)",
+        "Teatings",
+        "Om Chandi Arts",
+        "Madiwala"
+      ]
+    },
+    "replanning": null,
+    "hard_constraints": {
+      "start_point_respected": true,
+      "end_point_respected": true,
+      "start_time_respected": true,
+      "deadline_respected": true,
+      "budget_respected": true,
+      "travel_mode_respected": true,
+      "opening_hours_respected": true,
+      "route_feasibility_respected": true,
+      "no_overlapping_activities": true,
+      "no_impossible_travel": true,
+      "overall_hard_satisfied": true,
+      "no_fabrication": true
+    },
+    "soft_quality": {
+      "tourist_relevance_score": 0.5,
+      "interest_relevance_score": 0,
+      "travel_efficiency_score": 93,
+      "useful_time_utilization": 85,
+      "stop_count": 4,
+      "safety_buffer_minutes": 0,
+      "total_cost": 200,
+      "selected_places": [
+        "BMTC Depot 25 (HSR Layout)",
+        "Teatings",
+        "Om Chandi Arts",
+        "Madiwala"
+      ],
+      "no_fabrication": true
+    },
+    "failure_diagnostics": {
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (50%): ordinary local places selected."
+      ],
+      "failure_category": "NONE",
+      "responsible_subsystem": "NONE"
+    }
+  },
+  {
+    "case_id": "092",
+    "city": "Bengaluru",
+    "difficulty": "Hard",
+    "scenario": "Long layover.",
+    "latency_ms": 4512,
+    "api_error": null,
+    "initial_plan": {
+      "success": true,
+      "stop_count": 2,
+      "total_cost": 0,
+      "start_time": "10:00",
+      "end_arrival_time": "16:00",
+      "total_travel_minutes": 0,
+      "total_visit_minutes": 0,
+      "safety_buffer_minutes": 0,
+      "stops": [
+        {
+          "name": "Kempegowda International Airport",
+          "category": "start",
+          "arrival": "10:00",
+          "departure": "10:00",
+          "cost": 0
+        },
+        {
+          "name": "Kempegowda International Airport",
+          "category": "end",
+          "arrival": "10:00",
+          "departure": "10:00",
+          "cost": 0
+        }
+      ],
+      "selected_place_names": [
+        "Kempegowda International Airport",
+        "Kempegowda International Airport"
+      ]
+    },
+    "replanning": null,
+    "hard_constraints": {
+      "start_point_respected": true,
+      "end_point_respected": true,
+      "start_time_respected": true,
+      "deadline_respected": true,
+      "budget_respected": true,
+      "travel_mode_respected": true,
+      "opening_hours_respected": true,
+      "route_feasibility_respected": true,
+      "no_overlapping_activities": true,
+      "no_impossible_travel": true,
+      "overall_hard_satisfied": true,
+      "no_fabrication": true
+    },
+    "soft_quality": {
+      "tourist_relevance_score": 1,
+      "interest_relevance_score": 0,
+      "travel_efficiency_score": 0,
+      "useful_time_utilization": 0,
+      "stop_count": 2,
+      "safety_buffer_minutes": 0,
+      "total_cost": 0,
+      "selected_places": [
+        "Kempegowda International Airport",
+        "Kempegowda International Airport"
+      ],
+      "no_fabrication": true
+    },
+    "failure_diagnostics": {
+      "status": "PASS",
+      "reasons": [],
+      "failure_category": "NONE",
+      "responsible_subsystem": "NONE"
+    }
+  },
+  {
+    "case_id": "093",
+    "city": "Bengaluru",
+    "difficulty": "Extreme",
+    "scenario": "Tiny budget group.",
+    "latency_ms": 3718,
+    "api_error": null,
+    "initial_plan": {
+      "success": true,
+      "stop_count": 6,
+      "total_cost": 0,
+      "start_time": "10:00",
+      "end_arrival_time": "16:00",
+      "total_travel_minutes": 28,
+      "total_visit_minutes": 0,
+      "safety_buffer_minutes": 0,
+      "stops": [
+        {
+          "name": "Hotel Paraag",
+          "category": "start",
+          "arrival": "10:00",
+          "departure": "10:00",
+          "cost": 0
+        },
+        {
+          "name": "Bangalore Fort",
+          "category": "attraction",
+          "arrival": "10:09",
+          "departure": "11:09",
+          "cost": 0
+        },
+        {
+          "name": "Visvesvaraya Industrial and Technology Museum",
+          "category": "museum",
+          "arrival": "11:15",
+          "departure": "12:45",
+          "cost": 0
+        },
+        {
+          "name": "Vidhana Soudha",
+          "category": "historic",
+          "arrival": "12:53",
+          "departure": "14:08",
+          "cost": 0
+        },
+        {
+          "name": "Raj Bhavan Gardens",
+          "category": "park",
+          "arrival": "14:09",
+          "departure": "14:54",
+          "cost": 0
+        },
+        {
+          "name": "Hotel Paraag",
+          "category": "end",
+          "arrival": "14:58",
+          "departure": "14:58",
+          "cost": 0
+        }
+      ],
+      "selected_place_names": [
+        "Hotel Paraag",
+        "Bangalore Fort",
+        "Visvesvaraya Industrial and Technology Museum",
+        "Vidhana Soudha",
+        "Raj Bhavan Gardens",
+        "Hotel Paraag"
+      ]
+    },
+    "replanning": null,
+    "hard_constraints": {
+      "start_point_respected": true,
+      "end_point_respected": true,
+      "start_time_respected": true,
+      "deadline_respected": true,
+      "budget_respected": true,
+      "travel_mode_respected": true,
+      "opening_hours_respected": true,
+      "route_feasibility_respected": true,
+      "no_overlapping_activities": true,
+      "no_impossible_travel": true,
+      "overall_hard_satisfied": true,
+      "no_fabrication": true
+    },
+    "soft_quality": {
+      "tourist_relevance_score": 1,
+      "interest_relevance_score": 0,
+      "travel_efficiency_score": 91,
+      "useful_time_utilization": 83,
+      "stop_count": 6,
+      "safety_buffer_minutes": 0,
+      "total_cost": 0,
+      "selected_places": [
+        "Hotel Paraag",
+        "Bangalore Fort",
+        "Visvesvaraya Industrial and Technology Museum",
+        "Vidhana Soudha",
+        "Raj Bhavan Gardens",
+        "Hotel Paraag"
+      ],
+      "no_fabrication": true
+    },
+    "failure_diagnostics": {
+      "status": "PASS",
+      "reasons": [],
+      "failure_category": "NONE",
+      "responsible_subsystem": "NONE"
+    }
+  },
+  {
+    "case_id": "094",
+    "city": "Chennai",
+    "difficulty": "Easy",
+    "scenario": "Auto short.",
+    "latency_ms": 3234,
+    "api_error": null,
+    "initial_plan": {
+      "success": true,
+      "stop_count": 4,
+      "total_cost": 0,
+      "start_time": "16:00",
+      "end_arrival_time": "20:00",
+      "total_travel_minutes": 8,
+      "total_visit_minutes": 0,
+      "safety_buffer_minutes": 0,
+      "stops": [
+        {
+          "name": "Great Hotel",
+          "category": "start",
+          "arrival": "16:00",
+          "departure": "16:00",
+          "cost": 0
+        },
+        {
+          "name": "Dr. Maruthur Gopalan Ramachandran Museum",
+          "category": "museum",
+          "arrival": "16:04",
+          "departure": "17:34",
+          "cost": 0
+        },
+        {
+          "name": "Chepauk Palace",
+          "category": "historic",
+          "arrival": "17:35",
+          "departure": "19:05",
+          "cost": 0
+        },
+        {
+          "name": "Chennai Marina Lighthouse",
+          "category": "end",
+          "arrival": "19:08",
+          "departure": "19:08",
+          "cost": 0
+        }
+      ],
+      "selected_place_names": [
+        "Great Hotel",
+        "Dr. Maruthur Gopalan Ramachandran Museum",
+        "Chepauk Palace",
+        "Chennai Marina Lighthouse"
+      ]
+    },
+    "replanning": null,
+    "hard_constraints": {
+      "start_point_respected": true,
+      "end_point_respected": true,
+      "start_time_respected": true,
+      "deadline_respected": true,
+      "budget_respected": true,
+      "travel_mode_respected": true,
+      "opening_hours_respected": true,
+      "route_feasibility_respected": true,
+      "no_overlapping_activities": true,
+      "no_impossible_travel": true,
+      "overall_hard_satisfied": true,
+      "no_fabrication": true
+    },
+    "soft_quality": {
+      "tourist_relevance_score": 1,
+      "interest_relevance_score": 0,
+      "travel_efficiency_score": 96,
+      "useful_time_utilization": 78,
+      "stop_count": 4,
+      "safety_buffer_minutes": 0,
+      "total_cost": 0,
+      "selected_places": [
+        "Great Hotel",
+        "Dr. Maruthur Gopalan Ramachandran Museum",
+        "Chepauk Palace",
+        "Chennai Marina Lighthouse"
+      ],
+      "no_fabrication": true
+    },
+    "failure_diagnostics": {
+      "status": "PASS",
+      "reasons": [],
+      "failure_category": "NONE",
+      "responsible_subsystem": "NONE"
+    }
+  },
+  {
+    "case_id": "095",
+    "city": "Chennai",
+    "difficulty": "Medium",
+    "scenario": "Friday constraint.",
+    "latency_ms": 2020,
+    "api_error": null,
+    "initial_plan": {
+      "success": true,
+      "stop_count": 6,
+      "total_cost": 0,
+      "start_time": "10:00",
+      "end_arrival_time": "17:00",
+      "total_travel_minutes": 25,
+      "total_visit_minutes": 0,
+      "safety_buffer_minutes": 0,
+      "stops": [
+        {
+          "name": "Great Hotel",
+          "category": "start",
+          "arrival": "10:00",
+          "departure": "10:00",
+          "cost": 0
+        },
+        {
+          "name": "Madras High Court Museum",
+          "category": "museum",
+          "arrival": "10:03",
+          "departure": "11:33",
+          "cost": 0
+        },
+        {
+          "name": "Fort St. George Museum",
+          "category": "museum",
+          "arrival": "11:39",
+          "departure": "13:09",
+          "cost": 0
+        },
+        {
+          "name": "Dr. Maruthur Gopalan Ramachandran Museum",
+          "category": "museum",
+          "arrival": "13:14",
+          "departure": "14:44",
+          "cost": 0
+        },
+        {
+          "name": "India Post Philatelic Bureau",
+          "category": "museum",
+          "arrival": "14:48",
+          "departure": "16:18",
+          "cost": 0
+        },
+        {
+          "name": "Great Hotel",
+          "category": "end",
+          "arrival": "16:25",
+          "departure": "16:25",
+          "cost": 0
+        }
+      ],
+      "selected_place_names": [
+        "Great Hotel",
+        "Madras High Court Museum",
+        "Fort St. George Museum",
+        "Dr. Maruthur Gopalan Ramachandran Museum",
+        "India Post Philatelic Bureau",
+        "Great Hotel"
+      ]
+    },
+    "replanning": null,
+    "hard_constraints": {
+      "start_point_respected": true,
+      "end_point_respected": true,
+      "start_time_respected": true,
+      "deadline_respected": true,
+      "budget_respected": true,
+      "travel_mode_respected": true,
+      "opening_hours_respected": true,
+      "route_feasibility_respected": true,
+      "no_overlapping_activities": true,
+      "no_impossible_travel": true,
+      "overall_hard_satisfied": true,
+      "no_fabrication": true
+    },
+    "soft_quality": {
+      "tourist_relevance_score": 1,
+      "interest_relevance_score": 0,
+      "travel_efficiency_score": 94,
+      "useful_time_utilization": 92,
+      "stop_count": 6,
+      "safety_buffer_minutes": 0,
+      "total_cost": 0,
+      "selected_places": [
+        "Great Hotel",
+        "Madras High Court Museum",
+        "Fort St. George Museum",
+        "Dr. Maruthur Gopalan Ramachandran Museum",
+        "India Post Philatelic Bureau",
+        "Great Hotel"
+      ],
+      "no_fabrication": true
+    },
+    "failure_diagnostics": {
+      "status": "PASS",
+      "reasons": [],
+      "failure_category": "NONE",
+      "responsible_subsystem": "NONE"
+    }
+  },
+  {
+    "case_id": "096",
+    "city": "Chennai",
+    "difficulty": "Medium",
+    "scenario": "Tuesday constraint.",
+    "latency_ms": 3967,
+    "api_error": null,
+    "initial_plan": {
+      "success": true,
+      "stop_count": 6,
+      "total_cost": 0,
+      "start_time": "09:00",
+      "end_arrival_time": "18:00",
+      "total_travel_minutes": 17,
+      "total_visit_minutes": 0,
+      "safety_buffer_minutes": 0,
+      "stops": [
+        {
+          "name": "Great Hotel",
+          "category": "start",
+          "arrival": "09:00",
+          "departure": "09:00",
+          "cost": 0
+        },
+        {
+          "name": "Fort St. George Museum",
+          "category": "museum",
+          "arrival": "09:04",
+          "departure": "10:34",
+          "cost": 0
+        },
+        {
+          "name": "Fort St. George",
+          "category": "attraction",
+          "arrival": "10:36",
+          "departure": "12:06",
+          "cost": 0
+        },
+        {
+          "name": "University of Madras Auditorium",
+          "category": "entertainment",
+          "arrival": "12:11",
+          "departure": "14:11",
+          "cost": 0
+        },
+        {
+          "name": "Chepauk Palace",
+          "category": "historic",
+          "arrival": "14:12",
+          "departure": "15:42",
+          "cost": 0
+        },
+        {
+          "name": "Great Hotel",
+          "category": "end",
+          "arrival": "15:47",
+          "departure": "15:47",
+          "cost": 0
+        }
+      ],
+      "selected_place_names": [
+        "Great Hotel",
+        "Fort St. George Museum",
+        "Fort St. George",
+        "University of Madras Auditorium",
+        "Chepauk Palace",
+        "Great Hotel"
+      ]
+    },
+    "replanning": null,
+    "hard_constraints": {
+      "start_point_respected": true,
+      "end_point_respected": true,
+      "start_time_respected": true,
+      "deadline_respected": true,
+      "budget_respected": true,
+      "travel_mode_respected": true,
+      "opening_hours_respected": true,
+      "route_feasibility_respected": true,
+      "no_overlapping_activities": true,
+      "no_impossible_travel": true,
+      "overall_hard_satisfied": true,
+      "no_fabrication": true
+    },
+    "soft_quality": {
+      "tourist_relevance_score": 1,
+      "interest_relevance_score": 0,
+      "travel_efficiency_score": 96,
+      "useful_time_utilization": 75,
+      "stop_count": 6,
+      "safety_buffer_minutes": 0,
+      "total_cost": 0,
+      "selected_places": [
+        "Great Hotel",
+        "Fort St. George Museum",
+        "Fort St. George",
+        "University of Madras Auditorium",
+        "Chepauk Palace",
+        "Great Hotel"
+      ],
+      "no_fabrication": true
+    },
+    "failure_diagnostics": {
+      "status": "PASS",
+      "reasons": [],
+      "failure_category": "NONE",
+      "responsible_subsystem": "NONE"
+    }
+  },
+  {
+    "case_id": "097",
+    "city": "Chennai",
+    "difficulty": "Medium",
+    "scenario": "Change drop.",
+    "latency_ms": 3853,
+    "api_error": null,
+    "initial_plan": {
+      "success": true,
+      "stop_count": 5,
+      "total_cost": 0,
+      "start_time": "15:00",
+      "end_arrival_time": "20:00",
+      "total_travel_minutes": 13,
+      "total_visit_minutes": 0,
+      "safety_buffer_minutes": 0,
+      "stops": [
+        {
+          "name": "Great Hotel",
+          "category": "start",
+          "arrival": "15:00",
+          "departure": "15:00",
+          "cost": 0
+        },
+        {
+          "name": "Fort St. George Museum",
+          "category": "museum",
+          "arrival": "15:04",
+          "departure": "16:34",
+          "cost": 0
+        },
+        {
+          "name": "Wallajah Gate",
+          "category": "historic",
+          "arrival": "16:36",
+          "departure": "17:51",
+          "cost": 0
+        },
+        {
+          "name": "Fort St. George",
+          "category": "attraction",
+          "arrival": "17:52",
+          "departure": "19:22",
+          "cost": 0
+        },
+        {
+          "name": "Great Hotel",
+          "category": "end",
+          "arrival": "19:28",
+          "departure": "19:28",
+          "cost": 0
+        }
+      ],
+      "selected_place_names": [
+        "Great Hotel",
+        "Fort St. George Museum",
+        "Wallajah Gate",
+        "Fort St. George",
+        "Great Hotel"
+      ]
+    },
+    "replanning": {
+      "request": "User removes Marina Beach.",
+      "success": true,
+      "new_stop_count": 5,
+      "new_total_cost": 0,
+      "reused_components": [
+        "candidates"
+      ]
+    },
+    "hard_constraints": {
+      "start_point_respected": true,
+      "end_point_respected": true,
+      "start_time_respected": true,
+      "deadline_respected": true,
+      "budget_respected": true,
+      "travel_mode_respected": true,
+      "opening_hours_respected": true,
+      "route_feasibility_respected": true,
+      "no_overlapping_activities": true,
+      "no_impossible_travel": true,
+      "overall_hard_satisfied": true,
+      "no_fabrication": true
+    },
+    "soft_quality": {
+      "tourist_relevance_score": 1,
+      "interest_relevance_score": 0,
+      "travel_efficiency_score": 95,
+      "useful_time_utilization": 89,
+      "stop_count": 5,
+      "safety_buffer_minutes": 0,
+      "total_cost": 0,
+      "selected_places": [
+        "Great Hotel",
+        "Fort St. George Museum",
+        "Wallajah Gate",
+        "Fort St. George",
+        "Great Hotel"
+      ],
+      "no_fabrication": true
+    },
+    "failure_diagnostics": {
+      "status": "PASS",
+      "reasons": [],
+      "failure_category": "NONE",
+      "responsible_subsystem": "NONE"
+    }
+  },
+  {
+    "case_id": "098",
+    "city": "Chennai",
+    "difficulty": "Hard",
+    "scenario": "Kathipara Peak.",
+    "latency_ms": 7154,
+    "api_error": null,
+    "initial_plan": {
+      "success": true,
+      "stop_count": 3,
+      "total_cost": 0,
+      "start_time": "17:00",
+      "end_arrival_time": "19:30",
+      "total_travel_minutes": 37,
+      "total_visit_minutes": 0,
+      "safety_buffer_minutes": 0,
+      "stops": [
+        {
+          "name": "Thiyagaraya Nagar",
+          "category": "start",
+          "arrival": "17:00",
+          "departure": "17:00",
+          "cost": 0
+        },
+        {
+          "name": "காமராஜ் நினைவு வீடு",
+          "category": "museum",
+          "arrival": "17:03",
+          "departure": "18:33",
+          "cost": 0
+        },
+        {
+          "name": "Chennai International Airport Fire Station 2",
+          "category": "end",
+          "arrival": "19:07",
+          "departure": "19:07",
+          "cost": 0
+        }
+      ],
+      "selected_place_names": [
+        "Thiyagaraya Nagar",
+        "காமராஜ் நினைவு வீடு",
+        "Chennai International Airport Fire Station 2"
+      ]
+    },
+    "replanning": null,
+    "hard_constraints": {
+      "start_point_respected": true,
+      "end_point_respected": true,
+      "start_time_respected": true,
+      "deadline_respected": true,
+      "budget_respected": true,
+      "travel_mode_respected": true,
+      "opening_hours_respected": true,
+      "route_feasibility_respected": true,
+      "no_overlapping_activities": true,
+      "no_impossible_travel": true,
+      "overall_hard_satisfied": true,
+      "no_fabrication": true
+    },
+    "soft_quality": {
+      "tourist_relevance_score": 1,
+      "interest_relevance_score": 0,
+      "travel_efficiency_score": 71,
+      "useful_time_utilization": 85,
+      "stop_count": 3,
+      "safety_buffer_minutes": 0,
+      "total_cost": 0,
+      "selected_places": [
+        "Thiyagaraya Nagar",
+        "காமராஜ் நினைவு வீடு",
+        "Chennai International Airport Fire Station 2"
+      ],
+      "no_fabrication": true
+    },
+    "failure_diagnostics": {
+      "status": "PASS",
+      "reasons": [],
+      "failure_category": "NONE",
+      "responsible_subsystem": "NONE"
+    }
+  },
+  {
+    "case_id": "099",
+    "city": "Chennai",
+    "difficulty": "Hard",
+    "scenario": "ECR to Airport.",
+    "latency_ms": 1150,
+    "api_error": null,
+    "initial_plan": {
+      "success": false,
+      "stop_count": 2,
+      "total_cost": 0,
+      "start_time": "10:00",
+      "end_arrival_time": "14:00",
+      "total_travel_minutes": 30,
+      "total_visit_minutes": 0,
+      "safety_buffer_minutes": 0,
+      "stops": [
+        {
+          "name": "Start: DakshinaChitra",
+          "category": "start",
+          "arrival": "10:00",
+          "departure": "10:00",
+          "cost": 0
+        },
+        {
+          "name": "Destination: Airport",
+          "category": "end",
+          "arrival": "10:30",
+          "departure": "10:30",
+          "cost": 0
+        }
+      ],
+      "selected_place_names": [
+        "Start: DakshinaChitra",
+        "Destination: Airport"
+      ]
+    },
+    "replanning": null,
+    "hard_constraints": {
+      "start_point_respected": true,
+      "end_point_respected": true,
+      "start_time_respected": true,
+      "deadline_respected": true,
+      "budget_respected": true,
+      "travel_mode_respected": true,
+      "opening_hours_respected": true,
+      "route_feasibility_respected": true,
+      "no_overlapping_activities": true,
+      "no_impossible_travel": true,
+      "overall_hard_satisfied": true,
+      "no_fabrication": true
+    },
+    "soft_quality": {
+      "tourist_relevance_score": 1,
+      "interest_relevance_score": 0,
+      "travel_efficiency_score": 0,
+      "useful_time_utilization": 13,
+      "stop_count": 2,
+      "safety_buffer_minutes": 0,
+      "total_cost": 0,
+      "selected_places": [
+        "Start: DakshinaChitra",
+        "Destination: Airport"
+      ],
+      "no_fabrication": true
+    },
+    "failure_diagnostics": {
+      "status": "PASS",
+      "reasons": [],
+      "failure_category": "NONE",
+      "responsible_subsystem": "NONE"
+    }
+  },
+  {
+    "case_id": "100",
+    "city": "Chennai",
+    "difficulty": "Extreme",
+    "scenario": "Zero budget fail.",
+    "latency_ms": 2137,
+    "api_error": null,
+    "initial_plan": {
+      "success": true,
+      "stop_count": 4,
+      "total_cost": 0,
+      "start_time": "10:00",
+      "end_arrival_time": "16:00",
+      "total_travel_minutes": 81,
+      "total_visit_minutes": 0,
+      "safety_buffer_minutes": 0,
+      "stops": [
+        {
+          "name": "Great Hotel",
+          "category": "start",
+          "arrival": "10:00",
+          "departure": "10:00",
+          "cost": 0
+        },
+        {
+          "name": "Madras High Court Museum",
+          "category": "museum",
+          "arrival": "10:25",
+          "departure": "11:55",
+          "cost": 0
+        },
+        {
+          "name": "Fort St. George Museum",
+          "category": "museum",
+          "arrival": "12:18",
+          "departure": "13:48",
+          "cost": 0
+        },
+        {
+          "name": "Great Hotel",
+          "category": "end",
+          "arrival": "14:21",
+          "departure": "14:21",
+          "cost": 0
+        }
+      ],
+      "selected_place_names": [
+        "Great Hotel",
+        "Madras High Court Museum",
+        "Fort St. George Museum",
+        "Great Hotel"
+      ]
+    },
+    "replanning": null,
+    "hard_constraints": {
+      "start_point_respected": true,
+      "end_point_respected": true,
+      "start_time_respected": true,
+      "deadline_respected": true,
+      "budget_respected": true,
+      "travel_mode_respected": true,
+      "opening_hours_respected": true,
+      "route_feasibility_respected": true,
+      "no_overlapping_activities": true,
+      "no_impossible_travel": true,
+      "overall_hard_satisfied": true,
+      "no_fabrication": true
+    },
+    "soft_quality": {
+      "tourist_relevance_score": 1,
+      "interest_relevance_score": 0,
+      "travel_efficiency_score": 69,
+      "useful_time_utilization": 73,
+      "stop_count": 4,
+      "safety_buffer_minutes": 0,
+      "total_cost": 0,
+      "selected_places": [
+        "Great Hotel",
+        "Madras High Court Museum",
+        "Fort St. George Museum",
+        "Great Hotel"
+      ],
+      "no_fabrication": true
+    },
+    "failure_diagnostics": {
+      "status": "PASS",
+      "reasons": [],
+      "failure_category": "NONE",
+      "responsible_subsystem": "NONE"
+    }
+  }
+]

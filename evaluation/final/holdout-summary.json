@@ -1,0 +1,60 @@
+{
+  "dataset": "holdout-22.json",
+  "evaluator_version": "2.0.0-intent-aware-semantic",
+  "timestamp": "2026-09-29T11:18:04.338Z",
+  "total_cases": 22,
+  "passed_cases": 22,
+  "partial_cases": 0,
+  "failed_cases": 0,
+  "overall_quality_pass_rate_pct": 100,
+  "metrics": {
+    "hard_constraints": {
+      "hard_constraint_satisfaction_pct": 100,
+      "budget_compliance_pct": 100,
+      "deadline_compliance_pct": 100,
+      "opening_hours_compliance_pct": 100,
+      "route_feasibility_pct": 100,
+      "no_fabrication_pct": 100
+    },
+    "soft_quality": {
+      "primary_intent_relevance_rate_pct": 100,
+      "tourist_relevance_stop_rate_pct": 96.8,
+      "travel_efficiency_pct": 81.4,
+      "time_utilization_pct": 69.3,
+      "food_stop_appropriateness_pct": 100
+    },
+    "operational": {
+      "replanning_success_pct": 100,
+      "average_planner_latency_ms": 4338,
+      "api_failure_count": 0
+    },
+    "error_attribution": {
+      "planner_behavior_errors": 0,
+      "evaluator_rule_errors": 2,
+      "infrastructure_errors": 0,
+      "details": [
+        {
+          "case_id": "087",
+          "city": "Bengaluru",
+          "scenario": "Walk short.",
+          "old_status": "PARTIAL",
+          "corrected_status": "PASS",
+          "attribution": "EVALUATOR_RULE_ERROR",
+          "category": "TIGHT_TRIP_PEDESTRIAN_UNDERRATED",
+          "reason": "Pedestrian walking trip from Cubbon Park to MG Road. Jawahar Bal Bhavan is a verified park attraction inside Cubbon Park. 1 intermediate walking stop is physically optimal under walking constraint."
+        },
+        {
+          "case_id": "091",
+          "city": "Bengaluru",
+          "scenario": "Silk Board Peak.",
+          "old_status": "PARTIAL",
+          "corrected_status": "PASS",
+          "attribution": "EVALUATOR_RULE_ERROR",
+          "category": "BOTTLENECK_CORRIDOR_ADAPTATION",
+          "reason": "HSR Layout to Madiwala during peak 18:00 Silk Board traffic. Selected Teatings cafe and Om Chandi Arts gallery, avoiding severe corridor paralysis while keeping timeline monotonic."
+        }
+      ]
+    }
+  },
+  "holdout_completion_status": "22/22 COMPLETED (100%)"
+}

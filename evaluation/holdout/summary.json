@@ -1,0 +1,49 @@
+{
+  "dataset": "holdout-22.json",
+  "iteration": 0,
+  "timestamp": "2026-09-29T11:16:24.145Z",
+  "total_cases_run": 22,
+  "cases_completed": "22/22",
+  "passed_cases": 20,
+  "partial_cases": 2,
+  "failed_cases": 0,
+  "overall_pass_rate_pct": 90.9,
+  "metrics": {
+    "hard_constraints": {
+      "hard_constraint_satisfaction_pct": 100,
+      "budget_compliance_pct": 100,
+      "deadline_compliance_pct": 100,
+      "opening_hours_compliance_pct": 100,
+      "route_feasibility_pct": 100,
+      "no_fabrication_pct": 100
+    },
+    "soft_quality": {
+      "tourist_quality_case_pass_rate": 90.9,
+      "tourist_relevance_stop_rate": 96.8,
+      "average_tourist_ratio_pct": 93.2,
+      "travel_efficiency_pct": 81.4,
+      "time_utilization_pct": 69.3,
+      "food_stop_appropriateness_pct": 100
+    },
+    "operational": {
+      "replanning_success_pct": 100,
+      "average_planner_latency_ms": 4338,
+      "api_failure_count": 0
+    },
+    "hard_constraint_satisfaction_pct": 100,
+    "budget_compliance_pct": 100,
+    "deadline_compliance_pct": 100,
+    "opening_hours_compliance_pct": 100,
+    "route_feasibility_pct": 100,
+    "tourist_relevance_pct": 96.8,
+    "no_fabrication_pct": 100,
+    "replanning_success_pct": 100,
+    "average_planner_latency_ms": 4338,
+    "api_failure_count": 0
+  },
+  "metric_definitions": {
+    "tourist_quality_case_pass_rate": "Percentage of cases where at least 60% of attraction stops are tourist attractions (denominator: total evaluated cases)",
+    "tourist_relevance_stop_rate": "Percentage of intermediate attraction stops classified as Tier 1 or Tier 2 tourist attractions (denominator: total intermediate stops across all itineraries)",
+    "average_tourist_ratio_pct": "Arithmetic mean of case tourist ratios across all cases"
+  }
+}

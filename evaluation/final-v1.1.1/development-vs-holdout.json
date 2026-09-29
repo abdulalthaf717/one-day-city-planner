@@ -1,0 +1,91 @@
+{
+  "comparison": "Development Iteration 2 (78 cases) vs Final Holdout (22 cases)",
+  "version": "v1.1.1-calibrated-frozen",
+  "timestamp": "2026-09-29T14:47:25.635Z",
+  "development_78": {
+    "cases": 78,
+    "overall_pass_rate_pct": 96.2,
+    "metrics": {
+      "hard_constraints": {
+        "hard_constraint_satisfaction_pct": 100,
+        "budget_compliance_pct": 100,
+        "deadline_compliance_pct": 100,
+        "opening_hours_compliance_pct": 100,
+        "route_feasibility_pct": 100,
+        "no_fabrication_pct": 100
+      },
+      "soft_quality": {
+        "tourist_quality_case_pass_rate": 96.2,
+        "tourist_relevance_stop_rate": 96.1,
+        "average_tourist_ratio_pct": 95.5,
+        "travel_efficiency_pct": 76.7,
+        "time_utilization_pct": 74.5,
+        "food_stop_appropriateness_pct": 100
+      },
+      "operational": {
+        "replanning_success_pct": 100,
+        "average_planner_latency_ms": 5051,
+        "api_failure_count": 0
+      },
+      "hard_constraint_satisfaction_pct": 100,
+      "budget_compliance_pct": 100,
+      "deadline_compliance_pct": 100,
+      "opening_hours_compliance_pct": 100,
+      "route_feasibility_pct": 100,
+      "tourist_relevance_pct": 96.1,
+      "no_fabrication_pct": 100,
+      "replanning_success_pct": 100,
+      "average_planner_latency_ms": 5051,
+      "api_failure_count": 0
+    }
+  },
+  "holdout_22": {
+    "cases": 22,
+    "overall_pass_rate_pct": 90.9,
+    "metrics": {
+      "hard_constraints": {
+        "hard_constraint_satisfaction_pct": 100,
+        "budget_compliance_pct": 100,
+        "deadline_compliance_pct": 100,
+        "opening_hours_compliance_pct": 100,
+        "route_feasibility_pct": 100,
+        "no_fabrication_pct": 100
+      },
+      "soft_quality": {
+        "tourist_quality_case_pass_rate": 90.9,
+        "tourist_relevance_stop_rate": 95.9,
+        "average_tourist_ratio_pct": 93.2,
+        "travel_efficiency_pct": 82.2,
+        "time_utilization_pct": 79.1,
+        "food_stop_appropriateness_pct": 100
+      },
+      "operational": {
+        "replanning_success_pct": 100,
+        "average_planner_latency_ms": 4920,
+        "api_failure_count": 0
+      },
+      "hard_constraint_satisfaction_pct": 100,
+      "budget_compliance_pct": 100,
+      "deadline_compliance_pct": 100,
+      "opening_hours_compliance_pct": 100,
+      "route_feasibility_pct": 100,
+      "tourist_relevance_pct": 95.9,
+      "no_fabrication_pct": 100,
+      "replanning_success_pct": 100,
+      "average_planner_latency_ms": 4920,
+      "api_failure_count": 0
+    }
+  },
+  "deltas": {
+    "overall_pass_rate_pct": -5.3,
+    "hard_constraint_satisfaction_pct": 0,
+    "budget_compliance_pct": 0,
+    "deadline_compliance_pct": 0,
+    "tourist_relevance_pct": -0.2
+  },
+  "generalization_assessment": {
+    "generalization_gap_pct": 5.3,
+    "hard_constraints_maintained": true,
+    "zero_hallucinations_maintained": true
+  }
+}

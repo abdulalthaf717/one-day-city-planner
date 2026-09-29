@@ -1,0 +1,44 @@
+{
+  "dataset": "holdout-22.json",
+  "iteration": 0,
+  "timestamp": "2026-09-29T11:16:24.145Z",
+  "total_failures_detected": 1,
+  "top_recurring_failure_patterns": [
+    {
+      "category": "POOR_TOURIST_RELEVANCE",
+      "occurrences": 1
+    }
+  ],
+  "responsible_subsystems": {
+    "candidate_scoring": 1
+  },
+  "per_case_diagnostics": [
+    {
+      "case_id": "087",
+      "city": "Bengaluru",
+      "status": "PARTIAL",
+      "reasons": [],
+      "selected_places": [
+        "Cubbon Park",
+        "Jawahar Bal Bhavan",
+        "MG Road Boulevard"
+      ],
+      "total_cost": 0
+    },
+    {
+      "case_id": "091",
+      "city": "Bengaluru",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (50%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "BMTC Depot 25 (HSR Layout)",
+        "Teatings",
+        "Om Chandi Arts",
+        "Madiwala"
+      ],
+      "total_cost": 200
+    }
+  ]
+}

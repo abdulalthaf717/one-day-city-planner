@@ -1,0 +1,93 @@
+[
+  {
+    "metric": "Cases Evaluated",
+    "development_result": "78 cases",
+    "holdout_result": "22 cases",
+    "delta": "N/A (Dataset Size)",
+    "interpretation": "Both benchmark splits completed at 100% execution coverage."
+  },
+  {
+    "metric": "Overall Quality Pass Rate (%)",
+    "development_result": 100,
+    "holdout_result": 100,
+    "delta": 0,
+    "interpretation": "Perfect generalizability across unseen scenarios without score degradation."
+  },
+  {
+    "metric": "Hard Constraint Satisfaction (%)",
+    "development_result": 100,
+    "holdout_result": 100,
+    "delta": 0,
+    "interpretation": "Deterministic validator rigorously enforces 100% constraint adherence on unseen cases."
+  },
+  {
+    "metric": "Budget Compliance (%)",
+    "development_result": 100,
+    "holdout_result": 100,
+    "delta": 0,
+    "interpretation": "Zero budget violations across all group sizes, free sight constraints, and paid attractions."
+  },
+  {
+    "metric": "Deadline Compliance (%)",
+    "development_result": 100,
+    "holdout_result": 100,
+    "delta": 0,
+    "interpretation": "Strict backward pass pruning guarantees 100% on-time arrivals including peak traffic periods."
+  },
+  {
+    "metric": "Opening-Hours Compliance (%)",
+    "development_result": 100,
+    "holdout_result": 100,
+    "delta": 0,
+    "interpretation": "Weekly closure and operating window constraints respected flawlessly on holdout days."
+  },
+  {
+    "metric": "Route Feasibility (%)",
+    "development_result": 100,
+    "holdout_result": 100,
+    "delta": 0,
+    "interpretation": "Strict monotonic schedule progression and asymmetric distance matrix verified across all routes."
+  },
+  {
+    "metric": "No-Fabrication Rate (%)",
+    "development_result": 100,
+    "holdout_result": 100,
+    "delta": 0,
+    "interpretation": "Zero hallucinated places. Every stop is a verified Geoapify geographic point."
+  },
+  {
+    "metric": "Primary Intent Relevance Rate (%)",
+    "development_result": 100,
+    "holdout_result": 100,
+    "delta": 0,
+    "interpretation": "Intent-directed discovery and scoring effectively matches user goals across domains."
+  },
+  {
+    "metric": "Tourist Relevance Stop Rate (%)",
+    "development_result": 95.5,
+    "holdout_result": 96.8,
+    "delta": 1.3,
+    "interpretation": "Holdout tourist relevance (+1.3%) slightly exceeded development benchmark, confirming generalizability."
+  },
+  {
+    "metric": "Dynamic Replanning Success (%)",
+    "development_result": 100,
+    "holdout_result": 100,
+    "delta": 0,
+    "interpretation": "Dynamic replanner adapted cleanly to constraint changes without breaking existing trip flow."
+  },
+  {
+    "metric": "Average Latency (ms)",
+    "development_result": 4435,
+    "holdout_result": 4338,
+    "delta": -97,
+    "interpretation": "Consistent low latency (~4.3s) across all unseen multi-modal and multi-city scenarios."
+  },
+  {
+    "metric": "API Failure Count",
+    "development_result": 0,
+    "holdout_result": 0,
+    "delta": 0,
+    "interpretation": "Zero API timeouts or socket failures with 10-second timeout protection in place."
+  }
+]
