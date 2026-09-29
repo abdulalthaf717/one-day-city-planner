@@ -713,8 +713,52 @@ async function runBenchmark() {
   fs.writeFileSync(path.join(outDir, 'summary.json'), JSON.stringify(summary, null, 2), 'utf8');
   fs.writeFileSync(path.join(outDir, 'failure-analysis.json'), JSON.stringify(failureAnalysis, null, 2), 'utf8');
 
-  // Comparison with Iteration 0
-  if (iterationNum >= 1) {
+  // Comparison with Previous Iterations
+  if (iterationNum === 2) {
+    const prevSummaryPath = path.join(rootDir, 'evaluation', 'iterations', 'iteration-1', 'summary.json');
+    if (fs.existsSync(prevSummaryPath)) {
+      const iter1 = JSON.parse(fs.readFileSync(prevSummaryPath, 'utf8'));
+      const comparison = {
+        comparison: 'Iteration 1 vs Iteration 2',
+        candidate_version: 'v1.1.1-calibrated-candidate',
+        baseline_version: 'v1.1.0-calibrated-frozen',
+        timestamp: new Date().toISOString(),
+        dataset: datasetFile,
+        iteration_1: {
+          passed_cases: iter1.passed_cases,
+          partial_cases: iter1.partial_cases,
+          failed_cases: iter1.failed_cases,
+          overall_pass_rate_pct: iter1.overall_pass_rate_pct,
+          metrics: iter1.metrics,
+        },
+        iteration_2: {
+          passed_cases: passedCasesCount,
+          partial_cases: partialCasesCount,
+          failed_cases: failedCasesCount,
+          overall_pass_rate_pct: Math.round((passedCasesCount / totalCasesRun) * 1000) / 10,
+          metrics: summary.metrics,
+        },
+        deltas: {
+          overall_pass_rate_pct: Math.round(((passedCasesCount / totalCasesRun) * 100 - iter1.overall_pass_rate_pct) * 10) / 10,
+          tourist_relevance_stop_rate: Math.round((touristRelevanceStopRate - (iter1.metrics.tourist_relevance_pct || 69.9)) * 10) / 10,
+          replanning_success_pct: Math.round((replanRate - (iter1.metrics.replanning_success_pct || 83.3)) * 10) / 10,
+          average_planner_latency_ms: avgLatency - (iter1.metrics.average_planner_latency_ms || 3519),
+          hard_constraint_satisfaction_pct: Math.round((hardConstraintRate - iter1.metrics.hard_constraint_satisfaction_pct) * 10) / 10,
+          budget_compliance_pct: Math.round((budgetRate - (iter1.metrics.budget_compliance_pct || 100)) * 10) / 10,
+          deadline_compliance_pct: Math.round((deadlineRate - (iter1.metrics.deadline_compliance_pct || 100)) * 10) / 10,
+          opening_hours_compliance_pct: Math.round((openHoursRate - (iter1.metrics.opening_hours_compliance_pct || 100)) * 10) / 10,
+          route_feasibility_pct: Math.round((routeFeasRate - (iter1.metrics.route_feasibility_pct || 100)) * 10) / 10,
+        },
+        assessment: {
+          hard_constraint_regressions: hardConstraintRate < iter1.metrics.hard_constraint_satisfaction_pct,
+          tourist_relevance_maintained: touristRelevanceStopRate >= 80,
+          replanning_maintained: replanRate >= (iter1.metrics.replanning_success_pct || 83.3),
+        },
+      };
+      fs.writeFileSync(path.join(outDir, 'comparison-with-iteration-1.json'), JSON.stringify(comparison, null, 2), 'utf8');
+      console.log(`[OUTPUT] Comparison saved to ${path.join(outDir, 'comparison-with-iteration-1.json')}`);
+    }
+  } else if (iterationNum === 1) {
     const prevSummaryPath = path.join(rootDir, 'evaluation', 'iterations', 'iteration-0', 'summary.json');
     if (fs.existsSync(prevSummaryPath)) {
       const iter0 = JSON.parse(fs.readFileSync(prevSummaryPath, 'utf8'));
@@ -782,6 +826,8 @@ async function runBenchmark() {
   console.log(`[OUTPUT] Results saved to ${path.join(outDir, 'results.json')}`);
   console.log(`[OUTPUT] Summary saved to ${path.join(outDir, 'summary.json')}`);
   console.log(`[OUTPUT] Failure analysis saved to ${path.join(outDir, 'failure-analysis.json')}\n`);
+
+  process.exit(0);
 }
 
 runBenchmark();

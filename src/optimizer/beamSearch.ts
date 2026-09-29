@@ -142,10 +142,11 @@ export class BeamSearchOptimizer {
       totalVisitMinutes: 0,
       totalDistanceMeters: directLeg.distanceMeters,
       directDistanceMeters,
-      safetyBufferMinutes: deadlineMinutes - (startMinutes + directLeg.durationMinutes),
+      safetyBufferMinutes: initialRequiredBuffer,
       requiredBufferMinutes: initialRequiredBuffer,
       deadlineMinutes,
       plannedEndMinutes: startMinutes + directLeg.durationMinutes,
+      startTimeMinutes: startMinutes,
       visitedPlaces: [],
       unknownCostCount: 0,
       unverifiedHoursCount: 0,
@@ -174,6 +175,7 @@ export class BeamSearchOptimizer {
       finalDistanceMeters: number;
       finalArrivalMinutes: number;
       finalSafetyBufferMinutes: number;
+      unusedAvailableMinutes: number;
       requiredBufferMinutes: number;
       finalScore: number;
       scoreBreakdown: OptimizerScoreBreakdown;
@@ -181,14 +183,15 @@ export class BeamSearchOptimizer {
 
     // Evaluate direct START -> END as a baseline completed plan
     const directEndArrival = startMinutes + directLeg.durationMinutes;
-    const directBuffer = deadlineMinutes - directEndArrival;
-    if (directEndArrival <= deadlineMinutes && directBuffer >= initialRequiredBuffer) {
+    const directSlack = deadlineMinutes - directEndArrival;
+    if (directEndArrival <= deadlineMinutes && directSlack >= initialRequiredBuffer) {
       completedFeasiblePlans.push({
         state: rootState,
         finalTravelMinutes: directLeg.durationMinutes,
         finalDistanceMeters: directLeg.distanceMeters,
         finalArrivalMinutes: directEndArrival,
-        finalSafetyBufferMinutes: directBuffer,
+        finalSafetyBufferMinutes: initialRequiredBuffer,
+        unusedAvailableMinutes: Math.max(0, directSlack - initialRequiredBuffer),
         requiredBufferMinutes: initialRequiredBuffer,
         finalScore: initialScoreData.finalScore,
         scoreBreakdown: initialScoreData.breakdown,
@@ -335,10 +338,11 @@ export class BeamSearchOptimizer {
             totalVisitMinutes: totalVisitSoFar,
             totalDistanceMeters: totalDistanceSoFar,
             directDistanceMeters,
-            safetyBufferMinutes: remainingBufferAtEnd,
+            safetyBufferMinutes: requiredBuffer,
             requiredBufferMinutes: requiredBuffer,
             deadlineMinutes,
             plannedEndMinutes: plannedEndArrival,
+            startTimeMinutes: startMinutes,
             visitedPlaces: nextVisitedCandidates,
             unknownCostCount: state.unknownCostCount + (isUnknownCost ? 1 : 0),
             unverifiedHoursCount: state.unverifiedHoursCount + (isUnverifiedHours ? 1 : 0),
@@ -368,7 +372,8 @@ export class BeamSearchOptimizer {
             finalTravelMinutes: projectedTravelMinutes,
             finalDistanceMeters: totalDistanceSoFar,
             finalArrivalMinutes: plannedEndArrival,
-            finalSafetyBufferMinutes: remainingBufferAtEnd,
+            finalSafetyBufferMinutes: requiredBuffer,
+            unusedAvailableMinutes: Math.max(0, remainingBufferAtEnd - requiredBuffer),
             requiredBufferMinutes: requiredBuffer,
             finalScore: scoreResult.finalScore,
             scoreBreakdown: scoreResult.breakdown,
@@ -435,9 +440,12 @@ export class BeamSearchOptimizer {
         orderedPlaceIds: [],
         schedule: [],
         plannedArrivalTimeAtEnd: minutesToTimeString(deadlineMinutes),
+        plannedEndArrivalMinutes: deadlineMinutes,
         totalTravelMinutes: 0,
         totalActivityMinutes: 0,
         totalBufferMinutes: 0,
+        safetyBufferMinutes: 0,
+        unusedAvailableMinutes: 0,
         totalCost: 0,
         objectiveScore: 0,
         rejectionReasons: [
@@ -471,9 +479,12 @@ export class BeamSearchOptimizer {
       orderedPlaceIds: winningState.stops.map((s) => s.placeId),
       schedule: winningState.stops,
       plannedArrivalTimeAtEnd: minutesToTimeString(winning.finalArrivalMinutes),
+      plannedEndArrivalMinutes: winning.finalArrivalMinutes,
       totalTravelMinutes: winning.finalTravelMinutes,
       totalActivityMinutes: winningState.accumulatedVisitMinutes,
       totalBufferMinutes: winning.finalSafetyBufferMinutes,
+      safetyBufferMinutes: winning.finalSafetyBufferMinutes,
+      unusedAvailableMinutes: winning.unusedAvailableMinutes,
       totalCost: winningState.accumulatedCost,
       objectiveScore: winning.finalScore,
       scoreBreakdown: winning.scoreBreakdown,

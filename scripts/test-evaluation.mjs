@@ -1198,6 +1198,8 @@ async function runFullEvaluationSuite() {
 
   if (summary.failedScenarios > 0) {
     process.exit(1);
+  } else {
+    process.exit(0);
   }
 }
 

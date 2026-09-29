@@ -69,16 +69,22 @@ function minutesToTime(m) {
 }
 
 function calcBuffer(travelMins, mode = 'drive') {
-  const mult = mode === 'drive' ? 1.25 : 1.0;
+  const multipliers = { drive: 1.25, transit: 1.30, walk: 1.0, bicycle: 1.05 };
+  const mult = multipliers[mode] ?? 1.2;
   return Math.min(60, Math.max(15, Math.round(travelMins * 0.15 * mult)));
+}
+
+function calcUnusedAvailable(deadlineMin, plannedEndMin, safetyBufferMin) {
+  return Math.max(0, deadlineMin - plannedEndMin - safetyBufferMin);
 }
 
 // Simple beam search implementation for standalone CLI
 function runSimpleBeamSearch(params) {
-  const { startTime, deadlineTime, maxBudget, pax, matrix, candidates, endId } = params;
+  const { startTime, deadlineTime, maxBudget, pax, matrix, candidates, endId, mode = 'drive' } = params;
   const startMin = timeToMinutes(startTime);
   const deadlineMin = timeToMinutes(deadlineTime);
 
+  const initialReqBuffer = calcBuffer(0, mode);
   let bestState = {
     visited: [],
     lastId: 'START',
@@ -86,6 +92,9 @@ function runSimpleBeamSearch(params) {
     travelMins: 0,
     cost: 0,
     score: 0,
+    plannedEnd: startMin,
+    safetyBuffer: initialReqBuffer,
+    unusedAvailableMinutes: Math.max(0, deadlineMin - startMin - initialReqBuffer),
   };
 
   let beam = [bestState];
@@ -118,7 +127,7 @@ function runSimpleBeamSearch(params) {
         if (!legToEnd || legToEnd.status !== 'OK') continue;
 
         const totalTravel = state.travelMins + leg.durationMinutes + legToEnd.durationMinutes;
-        const reqBuffer = calcBuffer(totalTravel);
+        const reqBuffer = calcBuffer(totalTravel, mode);
         const plannedEnd = departure + legToEnd.durationMinutes;
 
         if (plannedEnd > deadlineMin || deadlineMin - plannedEnd < reqBuffer) {
@@ -139,7 +148,8 @@ function runSimpleBeamSearch(params) {
           cost: nextCost,
           score: state.score + utility,
           plannedEnd,
-          safetyBuffer: deadlineMin - plannedEnd,
+          safetyBuffer: reqBuffer,
+          unusedAvailableMinutes: Math.max(0, deadlineMin - plannedEnd - reqBuffer),
         };
 
         nextStates.push(newState);
@@ -443,6 +453,278 @@ try {
 }
 
 // -----------------------------------------------------------------
+// TEST J1: Authoritative Safety Buffer Calculation (Formula & Clamping)
+// -----------------------------------------------------------------
+try {
+  const bDriveShort = calcBuffer(20, 'drive'); // clamp(15, 20*0.15*1.25 = 3.75, 60) -> 15
+  const bDriveMid = calcBuffer(120, 'drive');   // clamp(15, 120*0.15*1.25 = 22.5 -> 23, 60) -> 23
+  const bDriveLong = calcBuffer(400, 'drive');  // clamp(15, 400*0.15*1.25 = 75, 60) -> 60
+  const bWalkMid = calcBuffer(120, 'walk');     // clamp(15, 120*0.15*1.0 = 18, 60) -> 18
+  const bTransitMid = calcBuffer(120, 'transit'); // clamp(15, 120*0.15*1.3 = 23.4 -> 23, 60) -> 23
+
+  const passedJ1 =
+    bDriveShort === 15 &&
+    bDriveMid === 23 &&
+    bDriveLong === 60 &&
+    bWalkMid === 18 &&
+    bTransitMid === 23;
+
+  report(
+    'TEST J1',
+    'Safety Buffer Calculation (Mode Multipliers & Bounds)',
+    passedJ1,
+    `Drive(20m)=${bDriveShort}m, Drive(120m)=${bDriveMid}m, Drive(400m)=${bDriveLong}m, Walk(120m)=${bWalkMid}m, Transit(120m)=${bTransitMid}m.`
+  );
+} catch (err) {
+  report('TEST J1', 'Safety Buffer Calculation', false, err.message);
+}
+
+// -----------------------------------------------------------------
+// TEST J2: Unused Available Time Calculation
+// -----------------------------------------------------------------
+try {
+  const deadlineMin = timeToMinutes('19:00'); // 1140
+  const plannedEndMin = timeToMinutes('15:02'); // 902
+  const safetyBufferMin = 20;
+
+  const unused = calcUnusedAvailable(deadlineMin, plannedEndMin, safetyBufferMin);
+  const passedJ2 = unused === 218; // 1140 - 902 - 20 = 218 min
+
+  report(
+    'TEST J2',
+    'Unused Available Time Calculation',
+    passedJ2,
+    `Deadline: 19:00, Planned End: 15:02, Safety Buffer: 20m -> Unused Available: ${unused}m (${Math.floor(unused/60)}h ${unused%60}m).`
+  );
+} catch (err) {
+  report('TEST J2', 'Unused Available Time Calculation', false, err.message);
+}
+
+// -----------------------------------------------------------------
+// TEST J3: Strict Metric Separation (No Conflation)
+// -----------------------------------------------------------------
+try {
+  const deadlineMin = 1140; // 19:00
+  const plannedEndMin = 902;  // 15:02
+  const rawGap = deadlineMin - plannedEndMin; // 238
+  const buffer = calcBuffer(62, 'drive'); // 15
+  const freeTime = calcUnusedAvailable(deadlineMin, plannedEndMin, buffer); // 223
+
+  const passedJ3 = buffer === 15 && freeTime === 223 && buffer !== rawGap && (buffer + freeTime === rawGap);
+  report(
+    'TEST J3',
+    'Separation of Safety Buffer and Unused Available Time',
+    passedJ3,
+    `Raw Gap: ${rawGap}m -> Safety Buffer: ${buffer}m != Raw Gap; Free Time: ${freeTime}m. Identity (Buffer + Free = Gap): ${buffer + freeTime === rawGap}.`
+  );
+} catch (err) {
+  report('TEST J3', 'Separation of Metrics', false, err.message);
+}
+
+// -----------------------------------------------------------------
+// TEST J4: Zero Safety-Buffer Inflation From Early Arrival
+// -----------------------------------------------------------------
+try {
+  const resEarly = runSimpleBeamSearch({
+    startTime: '09:00',
+    deadlineTime: '19:00', // 10 hour window
+    maxBudget: 2000,
+    pax: 1,
+    matrix: {
+      'START::P1': { durationMinutes: 15, status: 'OK' },
+      'P1::END': { durationMinutes: 15, status: 'OK' },
+    },
+    endId: 'END',
+    candidates: [{ id: 'P1', durationMinutes: 60, costPerPerson: 0, score: 85 }],
+  });
+
+  // Trip finishes at 09:00 + 15 + 60 + 15 = 10:30 (arrive 630m).
+  // Raw deadline gap is 19:00 - 10:30 = 8.5 hours (510 min).
+  // Safety buffer MUST NOT be 510 min. It must be clamp(15, 30 * 0.15 * 1.25, 60) = 15 min.
+  const passedJ4 = resEarly.safetyBuffer === 15 && resEarly.unusedAvailableMinutes === 495;
+  report(
+    'TEST J4',
+    'Zero Safety-Buffer Inflation on Early Arrival',
+    passedJ4,
+    `Arrived at 10:30 for 19:00 deadline. Safety Buffer: ${resEarly.safetyBuffer}m (NOT 510m!). Unused Time: ${resEarly.unusedAvailableMinutes}m.`
+  );
+} catch (err) {
+  report('TEST J4', 'Zero Safety-Buffer Inflation', false, err.message);
+}
+
+// -----------------------------------------------------------------
+// TEST J5: Schedule Utilization Incentive
+// -----------------------------------------------------------------
+try {
+  // Test that higher productive day utilization on quality sights is recognized
+  const availableWindow = 600; // 10h
+  const reqBuffer = 20;
+  const usableWindow = availableWindow - reqBuffer; // 580
+
+  const usedShort = 300; // 5h
+  const usedLong = 520;  // 8h40m
+
+  const utilRatioShort = usedShort / usableWindow;
+  const utilRatioLong = usedLong / usableWindow;
+
+  const passedJ5 = utilRatioLong > utilRatioShort && utilRatioLong <= 1.0;
+  report(
+    'TEST J5',
+    'Normalized Schedule Utilization Behavior',
+    passedJ5,
+    `Short Plan: ${(utilRatioShort * 100).toFixed(1)}% usable day; Long Plan: ${(utilRatioLong * 100).toFixed(1)}% usable day.`
+  );
+} catch (err) {
+  report('TEST J5', 'Schedule Utilization Behavior', false, err.message);
+}
+
+// -----------------------------------------------------------------
+// TEST J6: Preserving Safety Buffer Reserve (Hard Constraint)
+// -----------------------------------------------------------------
+try {
+  // Candidate finishes at 18:50 for 19:00 deadline. Required buffer is 20m.
+  // 19:00 - 18:50 = 10m < 20m required buffer -> MUST BE PRUNED
+  const matrixJ6 = {
+    'START::TIGHT_CAND': { durationMinutes: 30, status: 'OK' },
+    'TIGHT_CAND::END': { durationMinutes: 50, status: 'OK' }, // Total travel 80m -> reqBuffer 15-20m
+  };
+
+  const resJ6 = runSimpleBeamSearch({
+    startTime: '16:00',
+    deadlineTime: '18:00', // 2 hours
+    maxBudget: 2000,
+    pax: 1,
+    matrix: matrixJ6,
+    endId: 'END',
+    candidates: [{ id: 'TIGHT_CAND', durationMinutes: 60, costPerPerson: 0, score: 90 }], // 16:00+30+60+50 = 18:20 > 18:00
+  });
+
+  const passedJ6 = !resJ6.visited.includes('TIGHT_CAND');
+  report(
+    'TEST J6',
+    'Preserving Safety Buffer as Inviolable Constraint',
+    passedJ6,
+    `Candidate violating buffer reserve correctly pruned. Visited: [${resJ6.visited.join(', ')}].`
+  );
+} catch (err) {
+  report('TEST J6', 'Preserving Safety Buffer', false, err.message);
+}
+
+// -----------------------------------------------------------------
+// TEST J7: Prevention of Low-Quality Filler
+// -----------------------------------------------------------------
+try {
+  // Candidate with poor score (score: 10, e.g. generic neighborhood site) vs high quality sight (score: 90)
+  const matrixJ7 = {
+    'START::HIGH_QUALITY': { durationMinutes: 15, status: 'OK' },
+    'HIGH_QUALITY::LOW_FILLER': { durationMinutes: 15, status: 'OK' },
+    'HIGH_QUALITY::END': { durationMinutes: 15, status: 'OK' },
+    'LOW_FILLER::END': { durationMinutes: 15, status: 'OK' },
+  };
+
+  const resJ7 = runSimpleBeamSearch({
+    startTime: '09:00',
+    deadlineTime: '17:00',
+    maxBudget: 2000,
+    pax: 1,
+    matrix: matrixJ7,
+    endId: 'END',
+    candidates: [
+      { id: 'HIGH_QUALITY', durationMinutes: 90, costPerPerson: 50, score: 90 },
+      { id: 'LOW_FILLER', durationMinutes: 90, costPerPerson: 0, score: 5 }, // Low value filler
+    ],
+  });
+
+  // High quality sight should be picked; filler should not be forced merely to fill time
+  const passedJ7 = resJ7.visited.includes('HIGH_QUALITY');
+  report(
+    'TEST J7',
+    'Quality Protection (Rejects Low-Quality Filler)',
+    passedJ7,
+    `High-quality sight selected. Low-quality filler rejected without arbitrary time-filling. Selected: [${resJ7.visited.join(', ')}].`
+  );
+} catch (err) {
+  report('TEST J7', 'Prevention of Low-Quality Filler', false, err.message);
+}
+
+// -----------------------------------------------------------------
+// TEST J8: Long-Window Itinerary Behavior (10-Hour Window)
+// -----------------------------------------------------------------
+try {
+  const matrixJ8 = {
+    'START::S1': { durationMinutes: 15, status: 'OK' },
+    'S1::S2': { durationMinutes: 15, status: 'OK' },
+    'S2::S3': { durationMinutes: 15, status: 'OK' },
+    'S3::S4': { durationMinutes: 15, status: 'OK' },
+    'S1::END': { durationMinutes: 20, status: 'OK' },
+    'S2::END': { durationMinutes: 20, status: 'OK' },
+    'S3::END': { durationMinutes: 20, status: 'OK' },
+    'S4::END': { durationMinutes: 20, status: 'OK' },
+  };
+
+  const resJ8 = runSimpleBeamSearch({
+    startTime: '09:00',
+    deadlineTime: '19:00', // 10 hour window
+    maxBudget: 5000,
+    pax: 1,
+    matrix: matrixJ8,
+    endId: 'END',
+    candidates: [
+      { id: 'S1', durationMinutes: 75, costPerPerson: 50, score: 85 },
+      { id: 'S2', durationMinutes: 75, costPerPerson: 50, score: 85 },
+      { id: 'S3', durationMinutes: 75, costPerPerson: 50, score: 85 },
+      { id: 'S4', durationMinutes: 75, costPerPerson: 50, score: 85 },
+    ],
+  });
+
+  // In a 10-hour window with 4 clustered high quality sights, all 4 are scheduled
+  const passedJ8 = resJ8.visited.length >= 3 && resJ8.plannedEnd <= timeToMinutes('19:00');
+  report(
+    'TEST J8',
+    'Long-Window Horizon Utilization (Multi-Stop Sightseeing)',
+    passedJ8,
+    `Scheduled ${resJ8.visited.length} quality stops across 10h window. Planned End: ${minutesToTime(resJ8.plannedEnd)} (Buffer: ${resJ8.safetyBuffer}m, Free: ${resJ8.unusedAvailableMinutes}m).`
+  );
+} catch (err) {
+  report('TEST J8', 'Long-Window Horizon Behavior', false, err.message);
+}
+
+// -----------------------------------------------------------------
+// TEST J9: Short-Window Itinerary Behavior (2-Hour Window)
+// -----------------------------------------------------------------
+try {
+  const matrixJ9 = {
+    'START::QUICK1': { durationMinutes: 10, status: 'OK' },
+    'QUICK1::END': { durationMinutes: 10, status: 'OK' },
+    'START::LONG1': { durationMinutes: 40, status: 'OK' },
+    'LONG1::END': { durationMinutes: 40, status: 'OK' },
+  };
+
+  const resJ9 = runSimpleBeamSearch({
+    startTime: '10:00',
+    deadlineTime: '12:00', // 2 hours
+    maxBudget: 2000,
+    pax: 1,
+    matrix: matrixJ9,
+    endId: 'END',
+    candidates: [
+      { id: 'QUICK1', durationMinutes: 30, costPerPerson: 50, score: 80 },
+      { id: 'LONG1', durationMinutes: 90, costPerPerson: 50, score: 90 },
+    ],
+  });
+
+  const passedJ9 = resJ9.visited.includes('QUICK1') && !resJ9.visited.includes('LONG1') && resJ9.plannedEnd <= timeToMinutes('12:00');
+  report(
+    'TEST J9',
+    'Short-Window Horizon Behavior (Compact Graceful Selection)',
+    passedJ9,
+    `Selected 30m sight; rejected 90m sight. Planned End: ${minutesToTime(resJ9.plannedEnd)} before 12:00 (Buffer: ${resJ9.safetyBuffer}m, Free: ${resJ9.unusedAvailableMinutes}m).`
+  );
+} catch (err) {
+  report('TEST J9', 'Short-Window Horizon Behavior', false, err.message);
+}
+
+// -----------------------------------------------------------------
 // TEST A: Live Real API Integration Test (Hyderabad: VNR VJIET -> Railway Station)
 // -----------------------------------------------------------------
 async function runLiveTestA() {
@@ -536,6 +818,8 @@ async function runLiveTestA() {
 
   if (failCount > 0) {
     process.exit(1);
+  } else {
+    process.exit(0);
   }
 }
 

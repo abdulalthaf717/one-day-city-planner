@@ -60,9 +60,12 @@ export interface OptimizerOutput {
   orderedPlaceIds: string[];
   schedule: ScheduledStopAssignment[];
   plannedArrivalTimeAtEnd: string;
+  plannedEndArrivalMinutes?: number;
   totalTravelMinutes: number;
   totalActivityMinutes: number;
   totalBufferMinutes: number;
+  safetyBufferMinutes?: number;
+  unusedAvailableMinutes?: number;
   totalCost: number;
   objectiveScore: number;
   scoreBreakdown?: OptimizerScoreBreakdown;

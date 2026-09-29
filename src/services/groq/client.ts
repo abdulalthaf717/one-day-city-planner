@@ -26,7 +26,7 @@ export class GroqService implements IGroqService {
     this.modelName = process.env.GROQ_MODEL?.trim() || 'qwen/qwen3.8-27b';
 
     if (apiKey) {
-      this.client = new Groq({ apiKey });
+      this.client = new Groq({ apiKey, timeout: 10000 });
     }
   }
 
@@ -77,15 +77,18 @@ Rules:
 ${context.lastToolResultSummary ? `- Last Result: ${context.lastToolResultSummary}` : ''}`;
 
     try {
-      const completion = await groq.chat.completions.create({
-        model: this.modelName,
-        response_format: { type: 'json_object' },
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-        temperature: 0.1,
-      });
+      const completion = await groq.chat.completions.create(
+        {
+          model: this.modelName,
+          response_format: { type: 'json_object' },
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+          temperature: 0.1,
+        },
+        { signal: AbortSignal.timeout(10000) }
+      );
 
       const text = completion.choices[0]?.message?.content?.trim() || '{}';
       const parsed = JSON.parse(text);
@@ -99,7 +102,14 @@ ${context.lastToolResultSummary ? `- Last Result: ${context.lastToolResultSummar
     } catch (err: unknown) {
       // Graceful fallback logic based on deterministic state
       const isRateLimit = err instanceof Error && err.message.includes('429');
-      const reasonPrefix = isRateLimit ? '[Rate Limit Fallback] ' : '[Parsing Fallback] ';
+      const isTimeout =
+        err instanceof Error &&
+        (err.name === 'AbortError' || err.name === 'TimeoutError' || err.message.toLowerCase().includes('timeout'));
+      const reasonPrefix = isTimeout
+        ? '[Timeout Fallback (10s)] '
+        : isRateLimit
+        ? '[Rate Limit Fallback] '
+        : '[Parsing Fallback] ';
 
       if (!context.state.hasResolvedStart || !context.state.hasResolvedEnd) {
         return {
@@ -174,12 +184,15 @@ Respond ONLY with valid JSON in this structure:
 }`;
 
     try {
-      const completion = await groq.chat.completions.create({
-        model: this.modelName,
-        response_format: { type: 'json_object' },
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.2,
-      });
+      const completion = await groq.chat.completions.create(
+        {
+          model: this.modelName,
+          response_format: { type: 'json_object' },
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.2,
+        },
+        { signal: AbortSignal.timeout(10000) }
+      );
 
       const text = completion.choices[0]?.message?.content?.trim() || '{}';
       const parsed = JSON.parse(text);
@@ -192,12 +205,17 @@ Respond ONLY with valid JSON in this structure:
         suggestedPace: parsed.suggestedPace || 'moderate',
         reasoning: parsed.reasoning || 'Standard pace based on user constraints.',
       };
-    } catch {
+    } catch (err: unknown) {
+      const isTimeout =
+        err instanceof Error &&
+        (err.name === 'AbortError' || err.name === 'TimeoutError' || err.message.toLowerCase().includes('timeout'));
       return {
         inferredInterests: currentConstraints.interests,
         recommendedCategories: ['tourism.sights', 'catering.restaurant'],
         suggestedPace: 'moderate',
-        reasoning: 'Fallback semantic parsing due to model JSON formatting.',
+        reasoning: isTimeout
+          ? 'Fallback semantic parsing due to model request timeout (10s).'
+          : 'Fallback semantic parsing due to model JSON formatting.',
       };
     }
   }
@@ -250,25 +268,28 @@ Return ONLY a valid JSON object matching this schema:
 }`;
 
     try {
-      const completion = await groq.chat.completions.create({
-        model: this.modelName,
-        response_format: { type: 'json_object' },
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: prompt },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:${mimeType};base64,${imageBase64}`,
+      const completion = await groq.chat.completions.create(
+        {
+          model: this.modelName,
+          response_format: { type: 'json_object' },
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: prompt },
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: `data:${mimeType};base64,${imageBase64}`,
+                  },
                 },
-              },
-            ],
-          },
-        ],
-        temperature: 0.1,
-      });
+              ],
+            },
+          ],
+          temperature: 0.1,
+        },
+        { signal: AbortSignal.timeout(10000) }
+      );
 
       const text = completion.choices[0]?.message?.content?.trim() || '{}';
       const parsed = JSON.parse(text);
@@ -296,16 +317,23 @@ Return ONLY a valid JSON object matching this schema:
         eventDetails: parsed.eventDetails,
         mapExtractedPlaces: Array.isArray(parsed.mapExtractedPlaces) ? parsed.mapExtractedPlaces : undefined,
       };
-    } catch {
+    } catch (err: unknown) {
+      const isTimeout =
+        err instanceof Error &&
+        (err.name === 'AbortError' || err.name === 'TimeoutError' || err.message.toLowerCase().includes('timeout'));
       return {
         identifiedType: 'unrecognized',
         identifiedName: 'Unverified Location',
         city: cityContext,
-        description: 'Image processing completed with inconclusive identification.',
+        description: isTimeout
+          ? 'Image processing timed out after 10s.'
+          : 'Image processing completed with inconclusive identification.',
         categorySuggestion: 'attraction',
         confidence: 'low',
         confidenceScore: 0.25,
-        reasoning: 'Image processing completed with inconclusive identification.',
+        reasoning: isTimeout
+          ? 'Vision API request timed out after 10s.'
+          : 'Image processing completed with inconclusive identification.',
         searchQueryForVerification: cityContext ? `${cityContext} attractions` : 'tourist attraction',
         isAmbiguous: true,
         possibleAlternatives: [],
@@ -340,19 +368,22 @@ Briefly and concisely explain:
 Keep your response friendly, clear, and under 3-4 sentences. Do NOT invent fake URLs or fake metrics.`;
 
     try {
-      const completion = await groq.chat.completions.create({
-        model: this.modelName,
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You are a precise, friendly travel assistant. Ground all explanations strictly in the provided constraints and numbers. Do not invent traffic claims or external facts.',
-          },
-          { role: 'user', content: prompt },
-        ],
-        temperature: 0.3,
-        max_tokens: 250,
-      });
+      const completion = await groq.chat.completions.create(
+        {
+          model: this.modelName,
+          messages: [
+            {
+              role: 'system',
+              content:
+                'You are a precise, friendly travel assistant. Ground all explanations strictly in the provided constraints and numbers. Do not invent traffic claims or external facts.',
+            },
+            { role: 'user', content: prompt },
+          ],
+          temperature: 0.3,
+          max_tokens: 250,
+        },
+        { signal: AbortSignal.timeout(10000) }
+      );
 
       return completion.choices[0]?.message?.content?.trim() || 'Itinerary updated according to revised constraints.';
     } catch (err: unknown) {
@@ -360,6 +391,11 @@ Keep your response friendly, clear, and under 3-4 sentences. Do NOT invent fake 
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes('429')) {
         console.warn('[GroqService] Quota/Rate limit reached (HTTP 429). Using deterministic explanation.');
+      } else if (
+        err instanceof Error &&
+        (err.name === 'AbortError' || err.name === 'TimeoutError' || msg.toLowerCase().includes('timeout'))
+      ) {
+        console.warn('[GroqService] Request timed out after 10s. Using deterministic explanation.');
       }
       throw err;
     }

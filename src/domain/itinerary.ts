@@ -17,6 +17,7 @@ export interface OptimizerScoreBreakdown {
   interestUtility: number;
   qualityUtility: number;
   diversityUtility: number;
+  scheduleUtilizationUtility?: number;
   travelTimePenalty: number;
   detourPenalty: number;
   riskPenalty: number;
@@ -62,7 +63,9 @@ export interface ItinerarySummary {
   currency: string;
   totalTravelTimeMinutes: number;
   totalActivityTimeMinutes: number;
-  safetyBufferMinutes: number;
+  safetyBufferMinutes: number; // Intentional uncertainty reserve
+  unusedAvailableMinutes?: number; // Unallocated schedule capacity after safety buffer
+  plannedEndArrivalMinutes?: number; // Actual predicted arrival minutes at destination
   plannedArrivalTime: string; // Arrival at user's end point
   deadlineArrivalTime: string; // User's required latest arrival time
   placeCount: number;
@@ -92,6 +95,8 @@ export interface FinalItinerary {
   budget?: number;
   budgetStatus?: BudgetStatus;
   safetyBufferMinutes?: number;
+  unusedAvailableMinutes?: number;
+  plannedEndArrivalMinutes?: number;
   score?: number;
   scoreBreakdown?: OptimizerScoreBreakdown;
   feasibilityStatus?: FeasibilityStatus;

@@ -217,12 +217,26 @@ export class DeterministicOptimizer implements IItineraryOptimizer {
         ? 'uncertain'
         : 'within_budget';
 
+    const startMin = timeStringToMinutes(constraints.time.startTime);
+    const endMin = output.plannedEndArrivalMinutes ?? timeStringToMinutes(output.plannedArrivalTimeAtEnd);
+    const deadlineMin = timeStringToMinutes(constraints.time.latestArrivalTime);
+
+    const safetyBuffer =
+      output.safetyBufferMinutes ??
+      this.bufferPolicy.calculateRequiredBuffer(output.totalTravelMinutes, constraints.travelMode);
+
+    const unusedAvailable =
+      output.unusedAvailableMinutes ??
+      Math.max(0, deadlineMin - endMin - safetyBuffer);
+
     const summary: ItinerarySummary = {
       totalCost: output.totalCost,
       currency,
       totalTravelTimeMinutes: output.totalTravelMinutes,
       totalActivityTimeMinutes: output.totalActivityMinutes,
-      safetyBufferMinutes: output.totalBufferMinutes,
+      safetyBufferMinutes: safetyBuffer,
+      unusedAvailableMinutes: unusedAvailable,
+      plannedEndArrivalMinutes: endMin,
       plannedArrivalTime: output.plannedArrivalTimeAtEnd,
       deadlineArrivalTime: constraints.time.latestArrivalTime,
       placeCount: output.schedule.length,
@@ -230,8 +244,6 @@ export class DeterministicOptimizer implements IItineraryOptimizer {
       unavailableOrEstimatedInfo: warnings,
     };
 
-    const startMin = timeStringToMinutes(constraints.time.startTime);
-    const endMin = timeStringToMinutes(output.plannedArrivalTimeAtEnd);
     const totalTripMinutes = Math.max(0, endMin - startMin);
 
     const totalDistanceMeters =
@@ -257,7 +269,9 @@ export class DeterministicOptimizer implements IItineraryOptimizer {
       estimatedTotalCost: output.totalCost,
       budget: constraints.budget.total,
       budgetStatus,
-      safetyBufferMinutes: output.totalBufferMinutes,
+      safetyBufferMinutes: safetyBuffer,
+      unusedAvailableMinutes: unusedAvailable,
+      plannedEndArrivalMinutes: endMin,
       score: output.objectiveScore,
       scoreBreakdown: output.scoreBreakdown,
       feasibilityStatus: output.isFeasible ? 'FEASIBLE' : 'NO_FEASIBLE_ROUTE',

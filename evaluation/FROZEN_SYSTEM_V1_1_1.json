@@ -1,0 +1,52 @@
+{
+  "system_version": "v1.1.1-calibrated-frozen",
+  "timestamp": "2026-09-29T20:07:35+05:30",
+  "llm_model": "qwen/qwen3.8-27b (Groq API)",
+  "geocoding_routing_provider": "Geoapify Places & Route Matrix API",
+  "evaluator_version": "v1.1.1-intent-aware",
+  "optimizer_configuration": {
+    "algorithm": "Deterministic Multi-Objective Beam Search",
+    "beam_width": 25,
+    "max_depth": 10,
+    "activity_utility": "Three-tier smooth diminishing returns (0-180 pts)",
+    "interest_utility_cap": 140,
+    "category_diversity_cap": 50,
+    "schedule_utilization_component": {
+      "max_points": 25,
+      "formula": "round(25 * utilizationRatio * qualityMultiplier)",
+      "quality_gating": "qualityMultiplier = clamp(0, (avgRelevance - 45) / 35, 1.0)",
+      "utilization_ratio": "clamp(0, (plannedEnd - start) / (deadline - start - buffer), 1.0)"
+    },
+    "penalties": {
+      "travel_time_linear": 0.35,
+      "detour_excess_km": 1.5,
+      "buffer_boundary_risk": "penalizes unreserved slack < 10m",
+      "uncertain_hours_cost": "up to 30 pts",
+      "tourist_quality_penalty": "penalizes unrequested generic parks (-30), ordinary statues (-25), unrequested religious (-20 to -55), excess dining (-30)"
+    }
+  },
+  "safety_buffer_policy": {
+    "version": "Authoritative Bounded Buffer Policy v1.1.1",
+    "formula": "clamp(15, round(accumulatedTravelMinutes * 0.15 * modeMultiplier), 60)",
+    "multipliers": {
+      "drive": 1.25,
+      "transit": 1.30,
+      "walk": 1.0,
+      "bicycle": 1.05
+    },
+    "isolation_guarantee": "Strict mathematical separation: safetyBufferMinutes != latestEnd - plannedEndArrival; unusedAvailableMinutes = max(0, latestEnd - plannedEndArrival - safetyBufferMinutes)"
+  },
+  "development_calibration_summary": {
+    "dataset": "development-78.json",
+    "cases_evaluated": 78,
+    "overall_pass_rate_pct": 96.2,
+    "hard_constraint_satisfaction_pct": 100.0,
+    "budget_compliance_pct": 100.0,
+    "deadline_compliance_pct": 100.0,
+    "opening_hours_compliance_pct": 100.0,
+    "route_feasibility_pct": 100.0,
+    "tourist_relevance_stop_rate_pct": 96.1,
+    "daytime_schedule_utilization_pct": 74.5,
+    "average_planner_latency_ms": 5051
+  }
+}

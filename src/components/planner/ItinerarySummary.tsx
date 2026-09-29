@@ -49,16 +49,21 @@ export const ItinerarySummary: React.FC<ItinerarySummaryProps> = ({
   const travelMins = summary.totalTravelTimeMinutes || 0;
   const activityMins = summary.totalActivityTimeMinutes || 0;
   
-  // Calculate distinct Safety Buffer vs Unused Time
-  const plannedArrivalMin = timeToMinutes(summary.plannedArrivalTime);
+  // Calculate distinct Safety Buffer vs Remaining Free Time
+  const plannedArrivalMin = summary.plannedEndArrivalMinutes ?? timeToMinutes(summary.plannedArrivalTime);
   const deadlineMin = timeToMinutes(summary.deadlineArrivalTime);
   const rawGap = Math.max(0, deadlineMin - plannedArrivalMin);
 
-  // Safety buffer is the deliberate allocated margin (e.g. 15-60m based on travel)
+  // Safety buffer is the deliberate allocated uncertainty reserve (e.g. 15-60m based on travel)
   const modeMult = constraints?.travelMode === 'drive' ? 1.25 : 1.0;
-  const safetyBufferMins = Math.min(60, Math.max(15, Math.round(travelMins * 0.15 * modeMult)));
-  // Unused time is the remaining slack between planned arrival + safety buffer and deadline
-  const unusedSlackMins = Math.max(0, rawGap - safetyBufferMins);
+  const safetyBufferMins =
+    summary.safetyBufferMinutes ??
+    Math.min(60, Math.max(15, Math.round(travelMins * 0.15 * modeMult)));
+
+  // Remaining free time is the unused schedule capacity after preserving the safety buffer
+  const remainingFreeMins =
+    summary.unusedAvailableMinutes ??
+    Math.max(0, rawGap - safetyBufferMins);
 
   // Cost categories breakdown
   let knownSpend = 0;
@@ -201,21 +206,21 @@ export const ItinerarySummary: React.FC<ItinerarySummaryProps> = ({
             {formatMinutes(safetyBufferMins)}
           </p>
           <p className="text-[11px] font-medium text-indigo-700">
-            Delay &amp; traffic buffer
+            Reserved for travel uncertainty
           </p>
         </div>
 
-        {/* 5. UNUSED TIME (Separate from Safety Buffer per Requirement 36) */}
+        {/* 5. REMAINING FREE TIME */}
         <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 flex items-center justify-between">
-            <span>Unused Time</span>
+            <span>Remaining Free Time</span>
             <Calendar className="w-3 h-3 text-slate-400" />
           </div>
           <p className="text-xl font-extrabold text-slate-900 tracking-tight my-0.5">
-            {formatMinutes(unusedSlackMins)}
+            {formatMinutes(remainingFreeMins)}
           </p>
           <p className="text-[11px] font-medium text-slate-600">
-            Early arrival margin
+            Available capacity after safety buffer
           </p>
         </div>
 

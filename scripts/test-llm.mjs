@@ -253,6 +253,8 @@ Briefly explain the adjustment and trade-offs in 2-3 sentences.`,
 
   if (failCount > 0) {
     process.exit(1);
+  } else {
+    process.exit(0);
   }
 }
 

@@ -1,0 +1,59 @@
+{
+  "dataset": "development-78.json",
+  "iteration": 2,
+  "timestamp": "2026-09-29T14:34:08.093Z",
+  "total_failures_detected": 1,
+  "top_recurring_failure_patterns": [
+    {
+      "category": "POOR_TOURIST_RELEVANCE",
+      "occurrences": 1
+    }
+  ],
+  "responsible_subsystems": {
+    "candidate_scoring": 1
+  },
+  "per_case_diagnostics": [
+    {
+      "case_id": "027",
+      "city": "Bengaluru",
+      "status": "PARTIAL",
+      "reasons": [],
+      "selected_places": [
+        "Indiranagar",
+        "S T Bed Park at 5th Cross",
+        "Silk Board Junction"
+      ],
+      "total_cost": 0
+    },
+    {
+      "case_id": "045",
+      "city": "Bengaluru",
+      "status": "PARTIAL",
+      "reasons": [],
+      "selected_places": [
+        "Jayanagar",
+        "Laxman Rao Park",
+        "Jayanagar"
+      ],
+      "total_cost": 0
+    },
+    {
+      "case_id": "074",
+      "city": "Chennai",
+      "status": "PARTIAL",
+      "reasons": [
+        "Low tourist relevance (0%): ordinary local places selected."
+      ],
+      "selected_places": [
+        "Great Hotel",
+        "Fish Market",
+        "Zam Bazaar Market",
+        "எக்ஸ்பிரஸ் அவென்யூ மால்",
+        "Alwapet Market",
+        "T Nager Street Market",
+        "Thiyagaraya Nagar"
+      ],
+      "total_cost": 0
+    }
+  ]
+}

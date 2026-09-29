@@ -22,6 +22,7 @@ export interface ObjectiveContext {
   requiredBufferMinutes: number;
   deadlineMinutes: number;
   plannedEndMinutes: number;
+  startTimeMinutes?: number;
   visitedPlaces: CandidatePlace[];
   unknownCostCount: number;
   unverifiedHoursCount: number;
@@ -37,17 +38,32 @@ export function computeObjectiveScore(context: ObjectiveContext): {
     totalVisitMinutes,
     totalDistanceMeters,
     directDistanceMeters,
-    safetyBufferMinutes,
     requiredBufferMinutes,
     visitedPlaces,
     unknownCostCount,
     unverifiedHoursCount,
   } = context;
 
-  // 1. Activity Utility: Rewards quality visit time (0 - 120 points)
-  // Each visit minute contributes, plus a base bonus per visit stop
+  // 1. Activity Utility: Rewards quality visit time with smooth diminishing returns (0 - 180 points)
+  // Prevents artificial early saturation while avoiding endless stop expansion.
+  const visitMinutesTier1 = Math.min(180, totalVisitMinutes);
+  const visitMinutesTier2 = Math.min(180, Math.max(0, totalVisitMinutes - 180));
+  const visitMinutesTier3 = Math.max(0, totalVisitMinutes - 360);
+
+  const visitDurationScore =
+    visitMinutesTier1 * 0.25 + // 0 - 3h: 0.25 pt/min (up to 45 pts)
+    visitMinutesTier2 * 0.18 + // 3 - 6h: 0.18 pt/min (up to 32.4 pts)
+    visitMinutesTier3 * 0.10;  // 6h+:    0.10 pt/min
+
+  // Stop count bonus with diminishing returns per stop
+  const stopBonusTable = [0, 18, 34, 48, 60, 70, 78, 86, 94, 102];
+  const stopCountBonus =
+    visitedPlaces.length < stopBonusTable.length
+      ? stopBonusTable[visitedPlaces.length]
+      : 70 + (visitedPlaces.length - 5) * 8;
+
   const activityUtility = Math.round(
-    Math.min(120, totalVisitMinutes * 0.25 + visitedPlaces.length * 15)
+    Math.min(180, visitDurationScore + stopCountBonus)
   );
 
   // Tourist relevance & category composition analysis
@@ -109,11 +125,11 @@ export function computeObjectiveScore(context: ObjectiveContext): {
     }
   }
 
-  // 2. Interest Match Utility: Rewards places matching user interests (0 - 80 points)
+  // 2. Interest Match Utility: Rewards places matching user interests (0 - 140 points)
   let interestUtility = 0;
   if (userInterests.length === 0) {
     // Balanced default trip: driven by genuine tourist attraction relevance
-    interestUtility = Math.min(80, touristRelevanceSum);
+    interestUtility = Math.min(140, touristRelevanceSum);
   } else {
     const interestSet = new Set(userInterests.map((i) => i.toLowerCase().trim()));
     for (const place of visitedPlaces) {
@@ -124,7 +140,7 @@ export function computeObjectiveScore(context: ObjectiveContext): {
         interestUtility += 20;
       }
     }
-    interestUtility = Math.min(80, interestUtility);
+    interestUtility = Math.min(140, interestUtility);
   }
 
   // 3. Quality & Popularity Utility (0 - 60 points)
@@ -145,30 +161,51 @@ export function computeObjectiveScore(context: ObjectiveContext): {
   const uniqueCategories = new Set(visitedPlaces.map((p) => p.category));
   const diversityUtility = Math.min(50, uniqueCategories.size * 12);
 
-  // 5. Travel Time Penalty: Penalizes vehicle/transit time
+  // 5. Schedule Utilization Objective: Rewards productive daytime use conditional on candidate quality (0 - 25 points)
+  const startTimeMinutes =
+    context.startTimeMinutes ??
+    Math.max(0, context.plannedEndMinutes - totalTravelMinutes - totalVisitMinutes);
+  const availablePlanningWindow = Math.max(1, context.deadlineMinutes - startTimeMinutes);
+  const usableWindow = Math.max(1, availablePlanningWindow - requiredBufferMinutes);
+  const usedPlanningTime = Math.max(0, context.plannedEndMinutes - startTimeMinutes);
+  const utilizationRatio = Math.min(1.0, Math.max(0, usedPlanningTime / usableWindow));
+
+  // Conditional on candidate quality:
+  let totalRelevance = 0;
+  for (const p of visitedPlaces) {
+    totalRelevance += p.touristRelevanceScore ?? 70;
+  }
+  const avgRelevance = visitedPlaces.length > 0 ? totalRelevance / visitedPlaces.length : 0;
+
+  // Quality multiplier: authentic sightseeing (avg >= 75) receives full credit (1.0).
+  // Low quality (avg < 45) drops multiplier towards 0 so filler cannot boost utilization.
+  const qualityMultiplier = Math.min(1.0, Math.max(0, (avgRelevance - 45) / 35));
+  const scheduleUtilizationUtility = Math.round(25 * utilizationRatio * qualityMultiplier);
+
+  // 6. Travel Time Penalty: Penalizes vehicle/transit time
   // Travel overhead takes away from sightseeing enjoyment
   const travelTimePenalty = Math.round(totalTravelMinutes * 0.35);
 
-  // 6. Detour Penalty: Penalizes wandering far off the start -> end path
+  // 7. Detour Penalty: Penalizes wandering far off the start -> end path
   const excessMeters = Math.max(0, totalDistanceMeters - directDistanceMeters);
   const excessKm = excessMeters / 1000;
   const detourPenalty = Math.round(Math.min(40, excessKm * 1.5));
 
-  // 7. Schedule Risk Penalty: Penalizes buffer margins close to minimum
+  // 8. Schedule Risk Penalty: Penalizes cutting too close to the required safety reserve boundary
   let riskPenalty = 0;
-  const bufferMargin = safetyBufferMinutes - requiredBufferMinutes;
-  if (bufferMargin < 5) {
-    riskPenalty = 20; // Very tight buffer
-  } else if (bufferMargin < 15) {
-    riskPenalty = 10;
+  const unreservedSlack = context.deadlineMinutes - (context.plannedEndMinutes + requiredBufferMinutes);
+  if (unreservedSlack < 5) {
+    riskPenalty = 15; // Very tight margin beyond buffer
+  } else if (unreservedSlack < 10) {
+    riskPenalty = 5;
   } else {
     riskPenalty = 0;
   }
 
-  // 8. Uncertainty Penalty: Modest discount for unknown ticket costs or unverified hours
+  // 9. Uncertainty Penalty: Modest discount for unknown ticket costs or unverified hours
   const uncertaintyPenalty = Math.min(30, unknownCostCount * 4 + unverifiedHoursCount * 3);
 
-  // 9. Tourist Quality Penalty (penalizes unwanted neighborhood worship, statues, excess dining, excess generic parks)
+  // 10. Tourist Quality Penalty (penalizes unwanted neighborhood worship, statues, excess dining, excess generic parks)
   let touristQualityPenalty = 0;
   if (!wantsReligion && religiousStopCount > 0) {
     // Ordinary neighborhood worship places heavily penalized if unrequested
@@ -190,7 +227,8 @@ export function computeObjectiveScore(context: ObjectiveContext): {
     activityUtility +
     interestUtility +
     qualityUtility +
-    diversityUtility -
+    diversityUtility +
+    scheduleUtilizationUtility -
     travelTimePenalty -
     detourPenalty -
     riskPenalty -
@@ -204,6 +242,7 @@ export function computeObjectiveScore(context: ObjectiveContext): {
     interestUtility,
     qualityUtility,
     diversityUtility,
+    scheduleUtilizationUtility,
     travelTimePenalty,
     detourPenalty,
     riskPenalty,
