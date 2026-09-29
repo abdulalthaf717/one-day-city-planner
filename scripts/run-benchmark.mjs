@@ -38,15 +38,19 @@ const args = process.argv.slice(2);
 let datasetType = 'dev';
 let iterationNum = 0;
 
+let customOutDir = null;
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--dataset' && args[i + 1]) datasetType = args[i + 1].toLowerCase();
   if (args[i] === '--iteration' && args[i + 1]) iterationNum = parseInt(args[i + 1], 10);
+  if (args[i] === '--output-dir' && args[i + 1]) customOutDir = args[i + 1];
 }
 
 const isHoldout = datasetType === 'holdout';
 const datasetFile = isHoldout ? 'holdout-22.json' : 'development-78.json';
 const datasetPath = path.join(rootDir, 'test-dataset', datasetFile);
-const outDir = isHoldout
+const outDir = customOutDir
+  ? path.resolve(rootDir, customOutDir)
+  : isHoldout
   ? path.join(rootDir, 'evaluation', 'holdout')
   : path.join(rootDir, 'evaluation', 'iterations', `iteration-${iterationNum}`);
 
@@ -712,6 +716,45 @@ async function runBenchmark() {
   fs.writeFileSync(path.join(outDir, 'results.json'), JSON.stringify(results, null, 2), 'utf8');
   fs.writeFileSync(path.join(outDir, 'summary.json'), JSON.stringify(summary, null, 2), 'utf8');
   fs.writeFileSync(path.join(outDir, 'failure-analysis.json'), JSON.stringify(failureAnalysis, null, 2), 'utf8');
+
+  if (isHoldout) {
+    fs.writeFileSync(path.join(outDir, 'holdout-results.json'), JSON.stringify(results, null, 2), 'utf8');
+    fs.writeFileSync(path.join(outDir, 'holdout-summary.json'), JSON.stringify(summary, null, 2), 'utf8');
+
+    const devSummaryPath = path.join(rootDir, 'evaluation', 'iterations', 'iteration-2', 'summary.json');
+    if (fs.existsSync(devSummaryPath)) {
+      const devSummary = JSON.parse(fs.readFileSync(devSummaryPath, 'utf8'));
+      const devVsHoldout = {
+        comparison: 'Development Iteration 2 (78 cases) vs Final Holdout (22 cases)',
+        version: 'v1.1.1-calibrated-frozen',
+        timestamp: new Date().toISOString(),
+        development_78: {
+          cases: devSummary.total_cases_run,
+          overall_pass_rate_pct: devSummary.overall_pass_rate_pct,
+          metrics: devSummary.metrics,
+        },
+        holdout_22: {
+          cases: totalCasesRun,
+          overall_pass_rate_pct: Math.round((passedCasesCount / totalCasesRun) * 1000) / 10,
+          metrics: summary.metrics,
+        },
+        deltas: {
+          overall_pass_rate_pct: Math.round(((passedCasesCount / totalCasesRun) * 100 - devSummary.overall_pass_rate_pct) * 10) / 10,
+          hard_constraint_satisfaction_pct: Math.round((hardConstraintRate - devSummary.metrics.hard_constraint_satisfaction_pct) * 10) / 10,
+          budget_compliance_pct: Math.round((budgetRate - devSummary.metrics.budget_compliance_pct) * 10) / 10,
+          deadline_compliance_pct: Math.round((deadlineRate - devSummary.metrics.deadline_compliance_pct) * 10) / 10,
+          tourist_relevance_pct: Math.round((touristRelevanceStopRate - devSummary.metrics.tourist_relevance_pct) * 10) / 10,
+        },
+        generalization_assessment: {
+          generalization_gap_pct: Math.round((devSummary.overall_pass_rate_pct - (passedCasesCount / totalCasesRun) * 100) * 10) / 10,
+          hard_constraints_maintained: hardConstraintRate === 100,
+          zero_hallucinations_maintained: noFabRate === 100,
+        },
+      };
+      fs.writeFileSync(path.join(outDir, 'development-vs-holdout.json'), JSON.stringify(devVsHoldout, null, 2), 'utf8');
+      console.log(`[OUTPUT] Development vs Holdout comparison saved to ${path.join(outDir, 'development-vs-holdout.json')}`);
+    }
+  }
 
   // Comparison with Previous Iterations
   if (iterationNum === 2) {
