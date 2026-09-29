@@ -68,6 +68,31 @@ This application is strictly built using **100% free-tier services**. It has **n
 
 ## 4. Architectural Separation
 
+### System Execution Hierarchy
+```
+User
+  ↓
+Next.js UI (Trip Form, Timeline, Interactive Leaflet Map)
+  ↓
+Planner Agent (Orchestrator & Replanning Coordinator)
+  ├── Cognitive / Semantic Layer:
+  │   ├── Groq API (qwen/qwen3.8-27b): Intent extraction, category mapping & trade-off rationale
+  │   └── Vision Pipeline: Multimodal landmark image identification
+  ├── Geographic Discovery Layer:
+  │   ├── Geoapify Geocoding: Location resolution & metropolitan bounds check (10s timeout)
+  │   ├── Geoapify Places: 4-tier tourist relevance taxonomy & category expansion
+  │   └── Geoapify Route Matrix: Directional asymmetric N×N road transit grid
+  ├── Deterministic Computation Engine:
+  │   ├── Bounded Beam Search Optimizer: Multi-objective Pareto scoring (W=12, D=2)
+  │   └── Constraint Validator: Independent 14-rule deterministic verification
+  └── State & Session Cache:
+      └── Change Detector: Typed constraint diffing & selective cache invalidation
+  ↓
+Validated Itinerary (Guaranteed Feasible & Within Budget/Deadline)
+  ↓
+Interactive Timeline + Leaflet Route Polyline + Google Maps Deep-Links
+```
+
 The codebase enforces strict layer boundaries:
 
 ```
@@ -530,10 +555,13 @@ From real-world execution of `npm run test:evaluation` across 20 diverse scenari
 | **Average Planner Latency** | **310.5 ms** | $< 1500$ ms | **EXCEEDED** |
 | **Average API Calls Per Plan** | **2.1 calls** | $< 5.0$ calls | **EXCEEDED** |
 
-### C. Capstone Documentation
-- [`CAPSTONE_REPORT.md`](file:///CAPSTONE_REPORT.md): In-depth 19-section architectural and evaluation report.
-- [`DEMO_CHECKLIST.md`](file:///DEMO_CHECKLIST.md): Step-by-step interactive demo guide with the 4 shortcut scenarios and photo flow.
-- [`evaluation-results.json`](file:///evaluation-results.json): Structured machine-readable results of the 20 benchmark scenarios, 5 recovery demonstrations, and 13 failure taxonomy entries.
+### C. Capstone & Benchmark Documentation
+- [`CAPSTONE_FINAL_REPORT.md`](file:///CAPSTONE_FINAL_REPORT.md): Comprehensive 26-section architectural, evaluation, and generalization report.
+- [`CAPSTONE_RUBRIC_MAPPING.md`](file:///CAPSTONE_RUBRIC_MAPPING.md): Detailed 100-point rubric breakdown and evaluation defense.
+- [`DEMO_SCRIPT.md`](file:///DEMO_SCRIPT.md): Step-by-step 13-stage live interactive demonstration script and defense FAQ.
+- [`evaluation/final/FINAL_EVALUATION_REPORT.md`](file:///evaluation/final/FINAL_EVALUATION_REPORT.md): Full research-grade evaluation report across the 100-scenario benchmark (78 dev / 22 unseen holdout).
+- [`evaluation/final/development-vs-holdout.json`](file:///evaluation/final/development-vs-holdout.json): Metric-by-metric comparison between development and holdout splits.
+- [`evaluation-results.json`](file:///evaluation-results.json): Structured machine-readable results of the 20 benchmark scenarios, 5 recovery demonstrations, and failure taxonomy.
 
 ---
 

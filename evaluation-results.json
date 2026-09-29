@@ -118,7 +118,7 @@
         "Lumbini Park & Laser Show",
         "Hussain Sagar & Tank Bund"
       ],
-      "latencyMs": 0,
+      "latencyMs": 0.1,
       "validationResult": {
         "isValid": true,
         "errors": []
@@ -169,7 +169,7 @@
         "Hussain Sagar & Tank Bund",
         "Lumbini Park & Laser Show"
       ],
-      "latencyMs": 0.1,
+      "latencyMs": 0.3,
       "validationResult": {
         "isValid": true,
         "errors": []
@@ -196,7 +196,7 @@
         "Lumbini Park & Laser Show",
         "Hussain Sagar & Tank Bund"
       ],
-      "latencyMs": 0.1,
+      "latencyMs": 0.2,
       "validationResult": {
         "isValid": true,
         "errors": []
@@ -247,7 +247,7 @@
         "Charminar",
         "Lumbini Park & Laser Show"
       ],
-      "latencyMs": 0.9,
+      "latencyMs": 1.4,
       "validationResult": {
         "isValid": true,
         "errors": []
@@ -524,7 +524,7 @@
       "routeFeasible": true,
       "visitedStopsCount": 0,
       "visitedStopNames": [],
-      "latencyMs": 0.1,
+      "latencyMs": 0,
       "validationResult": {
         "isValid": true,
         "errors": []

@@ -1,5 +1,6 @@
 {
   "system_version": "v1.1.1-calibrated-frozen",
+  "git_commit_hash": "85af27ed0c06c58ecfff579d2a95c2ff874b61b9",
   "timestamp": "2026-09-29T20:07:35+05:30",
   "llm_model": "qwen/qwen3.8-27b (Groq API)",
   "geocoding_routing_provider": "Geoapify Places & Route Matrix API",
