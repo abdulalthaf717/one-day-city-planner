@@ -29,12 +29,16 @@ const suites = [
   { name: '5. Groq LLM Tool Calling', script: 'scripts/test-llm.mjs' },
   { name: '6. Multimodal Vision & Verification', script: 'scripts/test-vision.mjs' },
   { name: '7. Comprehensive Evaluation Benchmark', script: 'scripts/test-evaluation.mjs' },
+  { name: '8. Trip Copilot Chatbot & State Actions', script: 'scripts/test-copilot.mjs' },
 ];
 
 async function runCommand(scriptPath) {
   return new Promise((resolve) => {
     const t0 = performance.now();
-    const proc = spawn('node', [scriptPath], {
+    const isTsx = scriptPath.includes('copilot');
+    const binary = isTsx ? 'npx' : 'node';
+    const args = isTsx ? ['tsx', scriptPath] : [scriptPath];
+    const proc = spawn(binary, args, {
       cwd: rootDir,
       stdio: 'inherit',
       shell: true,
@@ -50,7 +54,7 @@ async function runCommand(scriptPath) {
 async function runMasterSuite() {
   console.log('================================================================');
   console.log('ONE-DAY CITY PLANNER: MASTER TEST SUITE (npm run test:all)');
-  console.log('RUNNING ALL 7 TEST SUITES SEQUENTIALLY');
+  console.log('RUNNING ALL 8 TEST SUITES SEQUENTIALLY');
   console.log('================================================================\n');
 
   const results = [];
@@ -85,7 +89,7 @@ async function runMasterSuite() {
 
   console.log('================================================================');
   if (overallPass) {
-    console.log('OVERALL RESULT: ALL 7 TEST SUITES PASSED (100% SUCCESS)\n');
+    console.log('OVERALL RESULT: ALL 8 TEST SUITES PASSED (100% SUCCESS)\n');
     process.exit(0);
   } else {
     console.log('OVERALL RESULT: ONE OR MORE SUITES FAILED\n');

@@ -20,6 +20,8 @@ import {
 } from '@/domain';
 import { detectConstraintChanges } from '@/state/changeDetector';
 import { toUserFacingError, UserFacingError } from '@/utils/userErrors';
+import { TripCopilotChat } from '@/components/copilot/TripCopilotChat';
+import { CopilotDiff } from '@/copilot/types';
 import { AlertCircle, Compass, Sparkles } from 'lucide-react';
 
 const INITIAL_CONSTRAINTS: TripConstraints = {
@@ -190,6 +192,28 @@ export default function PlannerDashboard() {
     }
   };
 
+  const handleCopilotApplyChanges = (
+    newConstraints: TripConstraints,
+    newItinerary: FinalItinerary,
+    newPlannerState?: PlannerState,
+    diff?: CopilotDiff
+  ) => {
+    setConstraints(newConstraints);
+    setCommittedConstraints({ ...newConstraints });
+    setItinerary(newItinerary);
+    if (newPlannerState) {
+      setPlannerState(newPlannerState);
+    }
+    if (diff) {
+      setPlanDiff({
+        addedStops: diff.addedStops,
+        removedStops: diff.removedStops,
+        costChange: diff.costChange ? { from: diff.costChange.from, to: diff.costChange.to } : undefined,
+        arrivalTimeChange: diff.arrivalTimeChange,
+      });
+    }
+  };
+
   // Demo Scenarios Handlers (Requirements 20 & 21)
   const handleLoadDemoScenario = () => {
     setConstraints({
@@ -306,7 +330,15 @@ export default function PlannerDashboard() {
                   onSelectStop={setSelectedStopId}
                 />
 
-                {/* 3. Chronological Timeline */}
+                {/* 3. Trip Copilot Action Agent */}
+                <TripCopilotChat
+                  constraints={constraints}
+                  itinerary={itinerary}
+                  plannerState={plannerState}
+                  onApplyChanges={handleCopilotApplyChanges}
+                />
+
+                {/* 4. Chronological Timeline */}
                 <ItineraryTimeline
                   itinerary={itinerary}
                   constraints={constraints}
@@ -315,30 +347,39 @@ export default function PlannerDashboard() {
                 />
               </>
             ) : (
-              <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center space-y-4 shadow-sm">
-                <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto shadow-2xs">
-                  <Compass className="w-7 h-7" />
+              <div className="space-y-6">
+                <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center space-y-4 shadow-sm">
+                  <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto shadow-2xs">
+                    <Compass className="w-7 h-7" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-lg font-bold text-slate-900">
+                      Ready to Plan Your Day
+                    </h3>
+                    <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+                      Enter your trip details on the left, or click{' '}
+                      <strong className="text-slate-800">&quot;⚡ Hyderabad Scenario&quot;</strong> to
+                      automatically create a realistic, road-routed one-day itinerary.
+                    </p>
+                  </div>
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={handleLoadDemoScenario}
+                      className="inline-flex items-center text-xs font-semibold px-4 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-colors shadow-2xs"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                      Load Demo Hyderabad Scenario
+                    </button>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <h3 className="text-lg font-bold text-slate-900">
-                    Ready to Plan Your Day
-                  </h3>
-                  <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
-                    Enter your trip details on the left, or click{' '}
-                    <strong className="text-slate-800">&quot;⚡ Hyderabad Scenario&quot;</strong> to
-                    automatically create a realistic, road-routed one-day itinerary.
-                  </p>
-                </div>
-                <div className="pt-2">
-                  <button
-                    type="button"
-                    onClick={handleLoadDemoScenario}
-                    className="inline-flex items-center text-xs font-semibold px-4 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-colors shadow-2xs"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                    Load Demo Hyderabad Scenario
-                  </button>
-                </div>
+
+                <TripCopilotChat
+                  constraints={constraints}
+                  itinerary={null}
+                  plannerState={plannerState}
+                  onApplyChanges={handleCopilotApplyChanges}
+                />
               </div>
             )}
           </div>
