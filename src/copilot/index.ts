@@ -4,5 +4,7 @@
 
 export * from './types';
 export * from './tools';
+export * from './conversationalResponder';
 export * from './intentParser';
 export * from './copilotEngine';
+

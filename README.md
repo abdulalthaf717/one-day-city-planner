@@ -531,6 +531,7 @@ Milestone 7 completes the productionization of the One-Day City Planner with a c
 | `npm run test:agent` | **Planner Agent & Replanning** | Controlled tool calling, state transitions, surgical cache invalidation, recovery loops. |
 | `npm run test:llm` | **Groq LLM Integration** | Live Groq API tool-selection decisions with `qwen/qwen3.8-27b`, structured JSON output. |
 | `npm run test:vision` | **Multimodal Vision & Verification** | Image recognition, place cross-verification, feasibility buffer check, 14-rule re-optimization. |
+| `npm run test:copilot` | **Trip Copilot Conversational & Action Suite** | 44-case suite (24 action & state sync tests + 20 conversational intelligence evaluation cases). |
 | `npm run lint` | **ESLint Static Analysis** | Strict Next.js & TypeScript linting (zero warnings, zero errors). |
 | `npx tsc --noEmit` | **TypeScript Type Checking** | Full type-checking across App Router and domain models (zero errors). |
 | `npm run build` | **Next.js Production Build** | Compiles production server, static routes, and dynamic API endpoints. |
@@ -557,6 +558,7 @@ From real-world execution of `npm run test:evaluation` across 20 diverse scenari
 
 ### C. Capstone & Benchmark Documentation
 - [`CAPSTONE_FINAL_REPORT.md`](file:///CAPSTONE_FINAL_REPORT.md): Comprehensive 26-section architectural, evaluation, and generalization report.
+- [`CONVERSATIONAL_EVALUATION_REPORT.md`](file:///CONVERSATIONAL_EVALUATION_REPORT.md): Full evaluation report of the Trip Copilot conversational intelligence upgrade across 20 conversational test cases and 7 quality dimensions.
 - [`CAPSTONE_RUBRIC_MAPPING.md`](file:///CAPSTONE_RUBRIC_MAPPING.md): Detailed 100-point rubric breakdown and evaluation defense.
 - [`DEMO_SCRIPT.md`](file:///DEMO_SCRIPT.md): Step-by-step 13-stage live interactive demonstration script and defense FAQ.
 - [`evaluation/final/FINAL_EVALUATION_REPORT.md`](file:///evaluation/final/FINAL_EVALUATION_REPORT.md): Full research-grade evaluation report across the 100-scenario benchmark (78 dev / 22 unseen holdout).

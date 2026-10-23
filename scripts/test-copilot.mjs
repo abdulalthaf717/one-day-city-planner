@@ -195,6 +195,7 @@ const BASE_ITINERARY = {
 async function runCopilotTestSuite() {
   const { CopilotIntentParser } = await import('../src/copilot/intentParser.ts');
   const { TripCopilotEngine } = await import('../src/copilot/copilotEngine.ts');
+  const responder = await import('../src/copilot/conversationalResponder.ts');
 
   const parser = new CopilotIntentParser();
   const engine = new TripCopilotEngine();
@@ -742,6 +743,853 @@ async function runCopilotTestSuite() {
     report('TEST 24', 'Explicit Action vs Suggestion', false, err.message);
   }
 
+  console.log('\n----------------------------------------------------------------');
+  console.log('CONVERSATIONAL INTELLIGENCE EVALUATION SUITE (20 REPRESENTATIVE CASES)');
+  console.log('----------------------------------------------------------------\n');
+
+  // Shared multi-turn session state for conversational sequence tests
+  let sessionPrefs = undefined;
+  let sessionProposal = undefined;
+  let sessionLastPlace = undefined;
+  const sessionConvHistory = [];
+
+  // ===========================================================
+  // CONV 01: Greeting (Mode A — General Conversation, 0 Tools)
+  // ===========================================================
+  try {
+    const res = await engine.processMessage({
+      message: 'Hello!',
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+    });
+    const passed =
+      res.success &&
+      res.conversationMode === 'GENERAL_CONVERSATION' &&
+      (res.toolsCalled?.length || 0) === 0 &&
+      res.reply.includes('Trip Copilot') &&
+      !res.diff;
+    report(
+      'CONV 01',
+      'Greeting (Mode A: Natural Welcome, Zero Tool Calls)',
+      passed,
+      `Mode=${res.conversationMode}, Tools=${JSON.stringify(res.toolsCalled)}, Reply="${res.reply.split('\n')[0]}"`
+    );
+  } catch (err) {
+    report('CONV 01', 'Greeting', false, err.message);
+  }
+
+  // ===========================================================
+  // CONV 02: General Tourism Question (Mode A)
+  // ===========================================================
+  try {
+    const res = await engine.processMessage({
+      message: 'What is the best way to explore Hyderabad in one day?',
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+    });
+    const passed =
+      res.success &&
+      res.conversationMode === 'GENERAL_CONVERSATION' &&
+      (res.toolsCalled?.length || 0) === 0 &&
+      res.reply.includes('Geographic Zone') &&
+      res.reply.includes('Old City');
+    report(
+      'CONV 02',
+      'General Tourism Question (Mode A: City Exploration Strategy)',
+      passed,
+      `Mode=${res.conversationMode}, Tools=${JSON.stringify(res.toolsCalled)}, Reply="${res.reply.split('\n')[0]}"`
+    );
+  } catch (err) {
+    report('CONV 02', 'General Tourism Question', false, err.message);
+  }
+
+  // ===========================================================
+  // CONV 03: Historical Attraction Question (Mode A + Entity Memory)
+  // ===========================================================
+  try {
+    const res = await engine.processMessage({
+      message: "What's special about Golconda Fort?",
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+    });
+    sessionLastPlace = res.lastDiscussedPlace;
+    const passed =
+      res.success &&
+      res.conversationMode === 'GENERAL_CONVERSATION' &&
+      res.lastDiscussedPlace === 'Golconda Fort' &&
+      res.reply.includes('Qutb Shahi') &&
+      res.reply.includes('acoustic');
+    report(
+      'CONV 03',
+      'Historical Attraction Question (Mode A: Golconda Fort Deep-Dive)',
+      passed,
+      `Tracked lastDiscussedPlace="${res.lastDiscussedPlace}". Reply snippet: "${res.reply.slice(0, 110)}..."`
+    );
+  } catch (err) {
+    report('CONV 03', 'Historical Attraction Question', false, err.message);
+  }
+
+  // ===========================================================
+  // CONV 04: Comparison Between Two Places (Mode A)
+  // ===========================================================
+  try {
+    const res = await engine.processMessage({
+      message: 'Would you recommend Charminar or Salar Jung Museum?',
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+    });
+    const passed =
+      res.success &&
+      res.conversationMode === 'GENERAL_CONVERSATION' &&
+      (res.toolsCalled?.length || 0) === 0 &&
+      res.reply.includes('Charminar') &&
+      res.reply.includes('Salar Jung Museum') &&
+      res.reply.includes('Veiled Rebecca');
+    report(
+      'CONV 04',
+      'Comparison Between Two Places (Charminar vs Salar Jung Museum)',
+      passed,
+      `Mode=${res.conversationMode}, compared both attractions with duration/cost/atmosphere trade-offs.`
+    );
+  } catch (err) {
+    report('CONV 04', 'Comparison Between Two Places', false, err.message);
+  }
+
+  // ===========================================================
+  // CONV 05: User Preference Statement 1 ("I prefer historical places")
+  // ===========================================================
+  try {
+    const res = await engine.processMessage({
+      message: 'I prefer historical places',
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+      userPreferences: sessionPrefs,
+    });
+    sessionPrefs = res.updatedPreferences;
+    sessionConvHistory.push(
+      { id: 'u5', role: 'user', content: 'I prefer historical places', timestamp: '10:00' },
+      { id: 'a5', role: 'assistant', content: res.reply, timestamp: '10:00' }
+    );
+    const passed =
+      res.success &&
+      res.conversationMode === 'GENERAL_CONVERSATION' &&
+      sessionPrefs?.preferredCategories?.includes('History') &&
+      res.reply.includes('History');
+    report(
+      'CONV 05',
+      'User Preference Statement 1 ("I prefer historical places")',
+      passed,
+      `Stored preferredCategories=${JSON.stringify(sessionPrefs?.preferredCategories)}.`
+    );
+  } catch (err) {
+    report('CONV 05', 'User Preference Statement 1', false, err.message);
+  }
+
+  // ===========================================================
+  // CONV 06: User Preference Statement 2 ("I also dislike crowded places")
+  // ===========================================================
+  try {
+    const res = await engine.processMessage({
+      message: 'I also dislike crowded places',
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+      userPreferences: sessionPrefs,
+      conversationHistory: sessionConvHistory,
+    });
+    sessionPrefs = res.updatedPreferences;
+    sessionConvHistory.push(
+      { id: 'u6', role: 'user', content: 'I also dislike crowded places', timestamp: '10:01' },
+      { id: 'a6', role: 'assistant', content: res.reply, timestamp: '10:01' }
+    );
+    const passed =
+      res.success &&
+      res.conversationMode === 'GENERAL_CONVERSATION' &&
+      sessionPrefs?.preferredCategories?.includes('History') &&
+      sessionPrefs?.crowdPreference === 'low' &&
+      res.reply.toLowerCase().includes('qutb shahi tombs');
+    report(
+      'CONV 06',
+      'User Preference Statement 2 ("I also dislike crowded places")',
+      passed,
+      `Combined preferences: preferred=${JSON.stringify(sessionPrefs?.preferredCategories)}, crowdPreference="${sessionPrefs?.crowdPreference}".`
+    );
+  } catch (err) {
+    report('CONV 06', 'User Preference Statement 2', false, err.message);
+  }
+
+  // ===========================================================
+  // CONV 07: Multi-Turn Context Follow-Up ("Based on that, what would you recommend for the remaining time?")
+  // ===========================================================
+  try {
+    const res = await engine.processMessage({
+      message: 'Based on that, what would you recommend for the remaining time?',
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+      userPreferences: sessionPrefs,
+      conversationHistory: sessionConvHistory,
+    });
+    sessionLastPlace = res.lastDiscussedPlace;
+    sessionProposal = res.pendingProposal;
+    const passed =
+      res.success &&
+      res.conversationMode === 'SIMULATION_AND_RECOMMENDATION' &&
+      res.reply.includes('Qutb Shahi Tombs') &&
+      res.reply.includes('167 minutes') &&
+      res.lastDiscussedPlace === 'Qutb Shahi Tombs';
+    report(
+      'CONV 07',
+      'Multi-Turn Context Follow-Up (Preference-Aware Recommendation)',
+      passed,
+      `Recommended "${res.lastDiscussedPlace}" matching [History + low crowd] for 167m unused time.`
+    );
+  } catch (err) {
+    report('CONV 07', 'Multi-Turn Context Follow-Up', false, err.message);
+  }
+
+  // ===========================================================
+  // CONV 08: Pronoun Resolution ("Can we add it?" after Golconda Fort)
+  // ===========================================================
+  try {
+    const histWithGolconda = [
+      { id: 'u-g', role: 'user', content: "What's special about Golconda Fort?", timestamp: '10:05' },
+      {
+        id: 'a-g',
+        role: 'assistant',
+        content: 'Golconda Fort is a monumental 16th-century citadel...',
+        discussedPlace: 'Golconda Fort',
+        timestamp: '10:05',
+      },
+    ];
+    const dec = parser.parseRuleBased('Can we add it?', baseContext, histWithGolconda);
+    const passed =
+      dec.actionType === 'ADD_PLACE' &&
+      dec.conversationMode === 'ACTION_EXECUTION' &&
+      dec.parameters.placeName === 'Golconda Fort';
+    report(
+      'CONV 08',
+      'Pronoun Resolution ("Can we add it?" -> "Golconda Fort")',
+      passed,
+      `Resolved pronoun "it" to placeName="${dec.parameters.placeName}", action=${dec.actionType}.`
+    );
+  } catch (err) {
+    report('CONV 08', 'Pronoun Resolution', false, err.message);
+  }
+
+  // ===========================================================
+  // CONV 09: Ambiguous Reference ("Remove the museum")
+  // ===========================================================
+  try {
+    const res = await engine.processMessage({
+      message: 'Remove the museum',
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+    });
+    const passed =
+      res.success &&
+      res.actionExecuted === 'CLARIFICATION_NEEDED' &&
+      res.reply.includes('Telangana State Archaeology Museum') &&
+      res.reply.includes('Birla Science Museum');
+    report(
+      'CONV 09',
+      'Ambiguous Reference Clarification ("Remove the museum")',
+      passed,
+      `Clarification prompt: "${res.reply}"`
+    );
+  } catch (err) {
+    report('CONV 09', 'Ambiguous Reference', false, err.message);
+  }
+
+  // ===========================================================
+  // CONV 10: Itinerary Cost Question (Mode B)
+  // ===========================================================
+  try {
+    const res = await engine.processMessage({
+      message: 'How much money do I have left?',
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+    });
+    const passed =
+      res.success &&
+      res.conversationMode === 'CURRENT_PLAN_QUESTION' &&
+      res.reply.includes('₹2000') &&
+      res.reply.includes('₹2500') &&
+      res.reply.includes('₹500');
+    report(
+      'CONV 10',
+      'Itinerary Cost Question (Mode B: Grounded Budget Breakdown)',
+      passed,
+      `Reply: "${res.reply}"`
+    );
+  } catch (err) {
+    report('CONV 10', 'Itinerary Cost Question', false, err.message);
+  }
+
+  // ===========================================================
+  // CONV 11: Why Place Selected Question (Mode B)
+  // ===========================================================
+  try {
+    const res = await engine.processMessage({
+      message: 'Why was Spanish Mosque chosen?',
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+    });
+    const passed =
+      res.success &&
+      res.conversationMode === 'CURRENT_PLAN_QUESTION' &&
+      res.reply.includes('Spanish Mosque') &&
+      res.reply.includes('Free admission') &&
+      res.reply.includes('Moorish');
+    report(
+      'CONV 11',
+      'Why Specific Place Selected Question (Mode B: Spanish Mosque)',
+      passed,
+      `Reply snippet: "${res.reply.slice(0, 110)}..."`
+    );
+  } catch (err) {
+    report('CONV 11', 'Why Place Selected Question', false, err.message);
+  }
+
+  // ===========================================================
+  // CONV 12: Feasibility Question ("Can I fit one more attraction?")
+  // ===========================================================
+  try {
+    const res = await engine.processMessage({
+      message: 'Can I fit one more attraction?',
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+      userPreferences: sessionPrefs,
+    });
+    const passed =
+      res.success &&
+      res.reply.includes('167 minutes') &&
+      res.reply.includes('28-minute safety buffer') &&
+      Boolean(res.pendingProposal);
+    report(
+      'CONV 12',
+      'Feasibility Question ("Can I fit one more attraction?")',
+      passed,
+      `Grounded in 167m unused time & 28m safety buffer. Suggested: "${res.lastDiscussedPlace}".`
+    );
+  } catch (err) {
+    report('CONV 12', 'Feasibility Question', false, err.message);
+  }
+
+  // ===========================================================
+  // CONV 13: Explicit Add Action ("Add Charminar")
+  // ===========================================================
+  try {
+    const res = await engine.processMessage({
+      message: 'Add Charminar',
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+    });
+    const hasCharminar = res.updatedItinerary?.stops?.some((s) =>
+      s.title.toLowerCase().includes('charminar')
+    );
+    const passed =
+      res.success &&
+      res.conversationMode === 'ACTION_EXECUTION' &&
+      res.actionExecuted === 'ADD_PLACE' &&
+      hasCharminar &&
+      res.diff?.addedStops?.includes('Charminar');
+    report(
+      'CONV 13',
+      'Explicit Add Action Execution ("Add Charminar")',
+      passed,
+      `Added Charminar. New stop count: ${res.updatedItinerary?.summary?.placeCount}, arrival: ${res.updatedItinerary?.summary?.plannedArrivalTime}.`
+    );
+  } catch (err) {
+    report('CONV 13', 'Explicit Add Action', false, err.message);
+  }
+
+  // ===========================================================
+  // CONV 14: Explicit Remove Action ("Remove Birla Science Museum")
+  // ===========================================================
+  try {
+    const res = await engine.processMessage({
+      message: 'Remove Birla Science Museum',
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+    });
+    const stillHasBirla = res.updatedItinerary?.stops?.some((s) =>
+      s.title.toLowerCase().includes('birla science museum')
+    );
+    const passed =
+      res.success &&
+      res.conversationMode === 'ACTION_EXECUTION' &&
+      res.actionExecuted === 'REMOVE_PLACE' &&
+      !stillHasBirla &&
+      res.diff?.removedStops?.includes('Birla Science Museum');
+    report(
+      'CONV 14',
+      'Explicit Remove Action Execution ("Remove Birla Science Museum")',
+      passed,
+      `Removed Birla Science Museum. Remaining stops: ${res.updatedItinerary?.summary?.placeCount}, new cost: ₹${res.updatedItinerary?.summary?.totalCost}.`
+    );
+  } catch (err) {
+    report('CONV 14', 'Explicit Remove Action', false, err.message);
+  }
+
+  // ===========================================================
+  // CONV 15: What-If Simulation ("What if I reduce my budget to ₹1000?")
+  // ===========================================================
+  let simProposalForConv16 = undefined;
+  try {
+    const res = await engine.processMessage({
+      message: 'What if I reduce my budget to ₹1000?',
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+    });
+    simProposalForConv16 = res.pendingProposal;
+    const passed =
+      res.success &&
+      res.conversationMode === 'SIMULATION_AND_RECOMMENDATION' &&
+      res.isSimulation === true &&
+      res.updatedConstraints?.budget?.total === 2500 && // Authoritative state untouched!
+      res.pendingProposal?.actionType === 'CHANGE_BUDGET' &&
+      res.pendingProposal?.parameters?.total === 1000;
+    report(
+      'CONV 15',
+      'What-If Simulation ("What if I reduce my budget to ₹1000?")',
+      passed,
+      `Simulated ₹1000 budget without mutating active ₹${res.updatedConstraints?.budget?.total} constraint. Stored pendingProposal.`
+    );
+  } catch (err) {
+    report('CONV 15', 'What-If Simulation', false, err.message);
+  }
+
+  // ===========================================================
+  // CONV 16: Apply Simulation ("That sounds good. Let's do it.")
+  // ===========================================================
+  try {
+    const res = await engine.processMessage({
+      message: "That sounds good. Let's do it.",
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+      pendingProposal: simProposalForConv16,
+    });
+    const passed =
+      res.success &&
+      res.conversationMode === 'ACTION_EXECUTION' &&
+      res.isSimulation === false &&
+      res.actionExecuted === 'CHANGE_BUDGET' &&
+      res.updatedConstraints?.budget?.total === 1000;
+    report(
+      'CONV 16',
+      'Apply Simulation Multi-Turn Confirmation ("That sounds good. Let\'s do it.")',
+      passed,
+      `Applied pending proposal: budget updated from ₹2500 -> ₹${res.updatedConstraints?.budget?.total}.`
+    );
+  } catch (err) {
+    report('CONV 16', 'Apply Simulation Confirmation', false, err.message);
+  }
+
+  // ===========================================================
+  // CONV 17: Infeasible Action ("I want to visit eight places, but I only have three hours")
+  // ===========================================================
+  try {
+    const res = await engine.processMessage({
+      message: 'I want to visit eight places, but I only have three hours',
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+    });
+    const passed =
+      res.success === false &&
+      res.actionExecuted === 'INFEASIBLE_REQUEST' &&
+      Boolean(res.infeasibleNotice) &&
+      res.reply.includes('8 places') &&
+      res.updatedItinerary?.stops?.length === BASE_ITINERARY.stops.length;
+    report(
+      'CONV 17',
+      'Infeasible Multi-Stop Request ("8 places in 3 hours")',
+      passed,
+      `Rejected infeasible cramming with clear explanation and preserved ${res.updatedItinerary?.stops?.length - 2}-stop valid plan.`
+    );
+  } catch (err) {
+    report('CONV 17', 'Infeasible Action', false, err.message);
+  }
+
+  // ===========================================================
+  // CONV 18: Make Trip Cheaper ("Make the trip cheaper")
+  // ===========================================================
+  try {
+    const res = await engine.processMessage({
+      message: 'Make the trip cheaper',
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+    });
+    const passed =
+      res.success &&
+      res.conversationMode === 'ACTION_EXECUTION' &&
+      res.actionExecuted === 'CHANGE_BUDGET' &&
+      (res.updatedItinerary?.summary?.totalCost ?? 500) < BASE_ITINERARY.summary.totalCost;
+    report(
+      'CONV 18',
+      'Make Trip Cheaper Action ("Make the trip cheaper")',
+      passed,
+      `Reduced total itinerary spend from ₹${BASE_ITINERARY.summary.totalCost} -> ₹${res.updatedItinerary?.summary?.totalCost} (new budget cap: ₹${res.updatedConstraints?.budget?.total}).`
+    );
+  } catch (err) {
+    report('CONV 18', 'Make Trip Cheaper', false, err.message);
+  }
+
+  // ===========================================================
+  // CONV 19: Make Trip Less Tiring ("Can we make the trip less tiring?")
+  // ===========================================================
+  try {
+    const res = await engine.processMessage({
+      message: 'Can we make the trip less tiring?',
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+    });
+    const passed =
+      res.success &&
+      res.conversationMode === 'ACTION_EXECUTION' &&
+      res.actionExecuted === 'MAKE_LESS_TIRING' &&
+      res.updatedConstraints?.pace === 'relaxed' &&
+      (res.updatedItinerary?.summary?.placeCount ?? 3) < BASE_ITINERARY.summary.placeCount;
+    report(
+      'CONV 19',
+      'Make Trip Less Tiring Action ("Can we make the trip less tiring?")',
+      passed,
+      `Pace set to "${res.updatedConstraints?.pace}", stops reduced from ${BASE_ITINERARY.summary.placeCount} -> ${res.updatedItinerary?.summary?.placeCount} (dropped longest stop).`
+    );
+  } catch (err) {
+    report('CONV 19', 'Make Trip Less Tiring', false, err.message);
+  }
+
+  // ===========================================================
+  // CONV 20: Preference Change Mid-Conversation ("Actually, I don't really care about museums")
+  // ===========================================================
+  try {
+    const res = await engine.processMessage({
+      message: "Actually, I don't really care about museums",
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+      userPreferences: sessionPrefs,
+    });
+    const remainingMuseums = (res.updatedItinerary?.stops || []).filter((s) =>
+      s.title.toLowerCase().includes('museum')
+    );
+    const passed =
+      res.success &&
+      res.conversationMode === 'GENERAL_CONVERSATION' &&
+      res.updatedPreferences?.dislikedCategories?.includes('museum') &&
+      remainingMuseums.length === 2 && // Active itinerary stops are NOT modified!
+      res.reply.toLowerCase().includes('museum') &&
+      Boolean(res.pendingProposal) &&
+      res.pendingProposal?.actionType === 'REMOVE_PLACE';
+    report(
+      'CONV 20',
+      'Mid-Conversation Preference Change (Non-destructive, creates pending removal proposal)',
+      passed,
+      `Disliked categories=${JSON.stringify(res.updatedPreferences?.dislikedCategories)}, museums remaining in plan=${remainingMuseums.length} (stops preserved without mutation). Proposed: "${res.pendingProposal?.description}".`
+    );
+  } catch (err) {
+    report('CONV 20', 'Preference Change Mid-Conversation', false, err.message);
+  }
+
+  // -------------------------------------------------------------
+  // REGRESSION & CONVERSATIONAL BUG FIX VERIFICATION SUITE (TESTS A - I)
+  // -------------------------------------------------------------
+  console.log('\n----------------------------------------------------------------');
+  console.log('REGRESSION & CONVERSATIONAL BUG FIX VERIFICATION SUITE (TESTS A - I)');
+  console.log('----------------------------------------------------------------\n');
+
+  // ===========================================================
+  // TEST A: Preference Extraction (Turn 1 with null itinerary)
+  // ===========================================================
+  try {
+    const res = await engine.processMessage({
+      message: "I like historical places, but I don't enjoy crowded attractions. I'd also prefer a relaxed day.",
+      constraints: BASE_CONSTRAINTS,
+      itinerary: null,
+      userPreferences: {
+        preferredCategories: [],
+        dislikedCategories: [],
+        pacePreference: 'moderate',
+        crowdPreference: 'moderate',
+        notes: [],
+      },
+    });
+    const passed =
+      res.success &&
+      res.updatedPreferences?.preferredCategories?.includes('History') &&
+      (res.updatedPreferences?.crowdPreference === 'low' ||
+        res.updatedPreferences?.dislikedCategories?.includes('crowded')) &&
+      res.updatedPreferences?.pacePreference === 'relaxed' &&
+      res.updatedItinerary === null;
+    report(
+      'TEST A',
+      'Preference Extraction with null Itinerary',
+      passed,
+      `Preferences: ${JSON.stringify(res.updatedPreferences)}, itinerary remains null.`
+    );
+  } catch (err) {
+    report('TEST A', 'Preference Extraction', false, err.message);
+  }
+
+  // ===========================================================
+  // TEST B: Conversational Response Preservation (No Overwrite)
+  // ===========================================================
+  try {
+    const mockLlmReply =
+      'I recommend spending your morning at Qutb Shahi Tombs and visiting the Spanish Mosque in the afternoon for a calm, historical day.';
+    const fakeDecision = {
+      actionType: 'INFORMATIONAL_QUESTION',
+      conversationMode: 'GENERAL_CONVERSATION',
+      isQuestionOnly: true,
+      confidence: 0.9,
+      reasoning: 'Natural LLM reply without tool calls',
+      conversationalReply: mockLlmReply,
+    };
+    const emptyCtx = engine.buildCompactContext(BASE_CONSTRAINTS, null);
+    const respGen = responder.generateGeneralConversationReply({
+      userMessage: 'What would you recommend?',
+      decision: fakeDecision,
+      context: emptyCtx,
+      preferences: {
+        preferredCategories: ['History'],
+        dislikedCategories: ['crowded'],
+        pacePreference: 'relaxed',
+        crowdPreference: 'low',
+        notes: [],
+      },
+    });
+    const respPlan = responder.generatePlanOrEvaluativeReply({
+      rawQuestion: 'What would you recommend?',
+      decision: fakeDecision,
+      context: emptyCtx,
+      preferences: {
+        preferredCategories: ['History'],
+        dislikedCategories: ['crowded'],
+        pacePreference: 'relaxed',
+        crowdPreference: 'low',
+        notes: [],
+      },
+    });
+    const passed = respGen.reply === mockLlmReply && respPlan.reply === mockLlmReply;
+    report(
+      'TEST B',
+      'Conversational Response Preservation (No Overwrite of LLM output)',
+      passed,
+      `Returned exact LLM response without falling back to generic summary.`
+    );
+  } catch (err) {
+    report('TEST B', 'Conversational Response Preservation', false, err.message);
+  }
+
+  // ===========================================================
+  // TEST C: Recommendation Before Planning (570m planning window capacity)
+  // ===========================================================
+  try {
+    const res = await engine.processMessage({
+      message: 'What would you recommend?',
+      constraints: BASE_CONSTRAINTS, // 09:30 to 19:00 -> 570 mins
+      itinerary: null,
+      userPreferences: {
+        preferredCategories: ['History'],
+        dislikedCategories: ['crowded'],
+        pacePreference: 'relaxed',
+        crowdPreference: 'low',
+        notes: [],
+      },
+    });
+    const passed =
+      res.success &&
+      (res.reply.includes('570') || res.reply.includes('9h 30m') || res.reply.includes('9.5') || res.reply.includes('day window') || res.reply.includes('daytime window')) &&
+      !res.reply.includes('0 minutes of open') &&
+      !res.reply.includes('0 minutes of unused') &&
+      !res.reply.includes('unusedAvailableMinutes');
+    report(
+      'TEST C',
+      'Recommendation Before Planning (References 570m planning window, not 0m)',
+      passed,
+      `Reply: "${res.reply.slice(0, 120)}..."`
+    );
+  } catch (err) {
+    report('TEST C', 'Recommendation Before Planning', false, err.message);
+  }
+
+  // ===========================================================
+  // TEST D: Empty-Itinerary Explanation (Factual, no 0-stop progression claim)
+  // ===========================================================
+  try {
+    const res = await engine.processMessage({
+      message: 'Why did you choose this plan?',
+      constraints: BASE_CONSTRAINTS,
+      itinerary: null,
+    });
+    const passed =
+      res.success &&
+      (res.reply.toLowerCase().includes('no itinerary has been generated yet') ||
+        res.reply.toLowerCase().includes('no plan exists yet')) &&
+      !res.reply.includes('0 visited attractions in Hyderabad ()') &&
+      !res.reply.includes('chosen because they form a direct, low-detour');
+    report(
+      'TEST D',
+      'Empty-Itinerary Explanation (Factual, no 0-stop progression claim)',
+      passed,
+      `Reply: "${res.reply}"`
+    );
+  } catch (err) {
+    report('TEST D', 'Empty-Itinerary Explanation', false, err.message);
+  }
+
+  // ===========================================================
+  // TEST E: Current-Plan Questions Grounded in Authoritative State
+  // ===========================================================
+  try {
+    const resLongest = await engine.processMessage({
+      message: 'What is the longest stop?',
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+    });
+    const resMoney = await engine.processMessage({
+      message: 'How much money is left?',
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+    });
+    const resFree = await engine.processMessage({
+      message: 'What are the free places?',
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+    });
+    const passed =
+      resLongest.reply.includes('Birla Science Museum') &&
+      resMoney.reply.includes('₹2000') &&
+      resMoney.reply.includes('₹2500') &&
+      resFree.reply.includes('Spanish Mosque');
+    report(
+      'TEST E',
+      'Authoritative Grounding for Active Plan Queries',
+      passed,
+      `Longest: Birla Science Museum, Money: ₹2000 left, Free: Spanish Mosque.`
+    );
+  } catch (err) {
+    report('TEST E', 'Current-plan questions grounding', false, err.message);
+  }
+
+  // ===========================================================
+  // TEST F: Explicit Action Execution Intact
+  // ===========================================================
+  try {
+    const resAdd = await engine.processMessage({
+      message: 'Add Charminar',
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+    });
+    const resRemove = await engine.processMessage({
+      message: 'Remove Birla Science Museum',
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+    });
+    const passed =
+      resAdd.success &&
+      resAdd.actionExecuted === 'ADD_PLACE' &&
+      resAdd.toolsCalled.includes('add_place') &&
+      resRemove.success &&
+      resRemove.actionExecuted === 'REMOVE_PLACE' &&
+      resRemove.toolsCalled.includes('remove_place');
+    report(
+      'TEST F',
+      'Explicit Action Execution Intact (Calls deterministic planner tools)',
+      passed,
+      `Add tools: ${resAdd.toolsCalled.join(', ')}, Remove tools: ${resRemove.toolsCalled.join(', ')}.`
+    );
+  } catch (err) {
+    report('TEST F', 'Explicit Action Execution', false, err.message);
+  }
+
+  // ===========================================================
+  // TEST G: Simulation Non-Destructive Guarantee
+  // ===========================================================
+  try {
+    const res = await engine.processMessage({
+      message: 'What if I reduce my budget to 1000?',
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+    });
+    const passed =
+      res.success &&
+      res.isSimulation === true &&
+      res.updatedConstraints?.budget?.total === 2500 &&
+      res.updatedItinerary?.version === BASE_ITINERARY.version &&
+      Boolean(res.pendingProposal);
+    report(
+      'TEST G',
+      'Simulation Non-Destructive Guarantee',
+      passed,
+      `Authoritative budget remains ₹2500, pendingProposal stored.`
+    );
+  } catch (err) {
+    report('TEST G', 'Simulation Non-Destructive Guarantee', false, err.message);
+  }
+
+  // ===========================================================
+  // TEST H: Preference Changes Do Not Silently Remove Stops
+  // ===========================================================
+  try {
+    const res = await engine.processMessage({
+      message: "Actually, I don't really care about museums",
+      constraints: BASE_CONSTRAINTS,
+      itinerary: BASE_ITINERARY,
+      userPreferences: sessionPrefs,
+    });
+    const remainingMuseums = (res.updatedItinerary?.stops || []).filter((s) =>
+      s.title.toLowerCase().includes('museum')
+    );
+    const passed =
+      res.success &&
+      res.updatedPreferences?.dislikedCategories?.includes('museum') &&
+      remainingMuseums.length === 2 && // Active itinerary stops are NOT modified!
+      res.reply.toLowerCase().includes('museum') &&
+      Boolean(res.pendingProposal) &&
+      res.pendingProposal?.actionType === 'REMOVE_PLACE';
+    report(
+      'TEST H',
+      'Preference Changes Do Not Silently Remove Stops (Preserved + Proposed)',
+      passed,
+      `Museums still present in active plan: ${remainingMuseums.length}. Proposal generated: "${res.pendingProposal?.description}".`
+    );
+  } catch (err) {
+    report('TEST H', 'Preference Changes Silently Remove Stops Check', false, err.message);
+  }
+
+  // ===========================================================
+  // TEST I: Error Fallback Handles LLM Failure Gracefully
+  // ===========================================================
+  try {
+    const origKey = process.env.GROQ_API_KEY;
+    delete process.env.GROQ_API_KEY; // temporarily remove key to test graceful deterministic fallback
+    const res = await engine.processMessage({
+      message: 'What would you recommend?',
+      constraints: BASE_CONSTRAINTS,
+      itinerary: null,
+      userPreferences: {
+        preferredCategories: ['History'],
+        dislikedCategories: ['crowded'],
+        pacePreference: 'relaxed',
+        crowdPreference: 'low',
+        notes: [],
+      },
+    });
+    process.env.GROQ_API_KEY = origKey;
+    const passed =
+      res.success &&
+      typeof res.reply === 'string' &&
+      res.reply.length > 20 &&
+      res.updatedItinerary === null;
+    report(
+      'TEST I',
+      'Error Fallback Handles LLM Failure Gracefully',
+      passed,
+      `Recovered gracefully with helpful reply without crashing: "${res.reply.slice(0, 100)}..."`
+    );
+  } catch (err) {
+    report('TEST I', 'Error Fallback Handling', false, err.message);
+  }
+
   // -------------------------------------------------------------
   // Summary
   // -------------------------------------------------------------
@@ -758,3 +1606,4 @@ runCopilotTestSuite().catch((err) => {
   console.error('Test suite failed with unexpected error:', err);
   process.exit(1);
 });
+

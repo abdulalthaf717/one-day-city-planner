@@ -22,6 +22,9 @@ export async function POST(req: NextRequest) {
       plannerState,
       history,
       conversationHistory,
+      userPreferences,
+      pendingProposal,
+      lastDiscussedPlace,
       simulateOnly,
     } = body;
 
@@ -47,6 +50,9 @@ export async function POST(req: NextRequest) {
       plannerState,
       history: Array.isArray(history) ? history : [],
       conversationHistory: Array.isArray(conversationHistory) ? conversationHistory : [],
+      userPreferences,
+      pendingProposal,
+      lastDiscussedPlace,
       simulateOnly: Boolean(simulateOnly),
     });
 

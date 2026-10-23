@@ -330,4 +330,56 @@ export const COPILOT_TOOL_DEFINITIONS: ToolDefinition[] = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'make_less_tiring',
+      description: 'Make the trip less tiring or more relaxed by reducing the number of stops or trimming the most demanding stop.',
+      parameters: {
+        type: 'object',
+        properties: {
+          targetPace: {
+            type: 'string',
+            enum: ['relaxed', 'moderate'],
+            description: 'Desired schedule pace',
+          },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'update_preferences',
+      description: 'Record or update user travel preferences (preferred categories, disliked categories, crowd tolerance, pace) and optionally adjust the trip if a disliked category is currently in the itinerary.',
+      parameters: {
+        type: 'object',
+        properties: {
+          preferredCategories: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Categories or interests the user likes (e.g. ["History", "Heritage"])',
+          },
+          dislikedCategories: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Categories the user dislikes or wants to avoid (e.g. ["museum", "crowded"])',
+          },
+          crowdPreference: {
+            type: 'string',
+            enum: ['low', 'moderate', 'any'],
+          },
+          pacePreference: {
+            type: 'string',
+            enum: ['relaxed', 'moderate', 'packed'],
+          },
+          adjustActivePlan: {
+            type: 'boolean',
+            description: 'True if the user wants to remove or replace currently scheduled stops that match a newly disliked category',
+          },
+        },
+      },
+    },
+  },
 ];
+

@@ -16,6 +16,8 @@ import {
   CopilotDiff,
   CopilotHistoryItem,
   CopilotMessage,
+  CopilotUserPreferences,
+  PendingActionProposal,
 } from '@/copilot/types';
 import { FinalItinerary, PlannerState, TripConstraints } from '@/domain';
 
@@ -32,12 +34,12 @@ export interface TripCopilotChatProps {
 }
 
 const QUICK_ACTIONS = [
+  { label: 'What’s special about Golconda Fort?', prompt: 'What’s special about Golconda Fort?' },
+  { label: 'Charminar vs Salar Jung?', prompt: 'Would you recommend Charminar or Salar Jung Museum?' },
   { label: 'Suggest improvements', prompt: 'Suggest improvements for my day' },
-  { label: 'Make it cheaper', prompt: 'Make the trip cheaper' },
-  { label: 'Why this plan?', prompt: 'Why did you choose this plan?' },
-  { label: 'How much money left?', prompt: 'How much money is left?' },
+  { label: 'Make it less tiring', prompt: 'Can we make the trip less tiring?' },
   { label: 'What if I walk?', prompt: 'What if I walk instead of drive?' },
-  { label: 'Can I fit one more place?', prompt: 'Can I fit one more place?' },
+  { label: 'How much money left?', prompt: 'How much money is left?' },
 ];
 
 export function TripCopilotChat({
@@ -51,13 +53,21 @@ export function TripCopilotChat({
       id: 'welcome',
       role: 'assistant',
       content:
-        'Hello! I am your **Trip Copilot**. You can ask me questions about your route or command changes like *"Add Charminar"*, *"Remove the museum"*, *"Make it cheaper"*, or simulate *"What if I walk?"*.',
+        'Hello! I am your **Trip Copilot** — your conversational AI travel assistant. You can ask me about attractions (e.g. *"What’s special about Golconda Fort?"* or *"Charminar vs Salar Jung Museum"*), share your preferences (*"I prefer historical places and dislike crowds"*), test *"What if..."* scenarios, or directly modify your itinerary.',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      conversationMode: 'GENERAL_CONVERSATION',
     },
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [historyStack, setHistoryStack] = useState<CopilotHistoryItem[]>([]);
+  const [userPreferences, setUserPreferences] = useState<CopilotUserPreferences | undefined>(
+    undefined
+  );
+  const [pendingProposal, setPendingProposal] = useState<PendingActionProposal | undefined>(
+    undefined
+  );
+  const [lastDiscussedPlace, setLastDiscussedPlace] = useState<string | undefined>(undefined);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -94,6 +104,9 @@ export function TripCopilotChat({
           plannerState,
           history: historyStack,
           conversationHistory: messages,
+          userPreferences,
+          pendingProposal,
+          lastDiscussedPlace,
         }),
       });
 
@@ -108,17 +121,27 @@ export function TripCopilotChat({
         role: 'assistant',
         content: data.reply || 'Request completed.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        conversationMode: data.conversationMode,
         actionExecuted: data.actionExecuted,
         isSimulation: data.isSimulation,
         diff: data.diff,
         suggestedActions: data.suggestedActions,
         infeasibleNotice: data.infeasibleNotice,
+        pendingProposal: data.pendingProposal,
+        discussedPlace: data.lastDiscussedPlace,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
 
       if (Array.isArray(data.updatedHistory)) {
         setHistoryStack(data.updatedHistory);
+      }
+      if (data.updatedPreferences) {
+        setUserPreferences(data.updatedPreferences);
+      }
+      setPendingProposal(data.pendingProposal);
+      if (data.lastDiscussedPlace) {
+        setLastDiscussedPlace(data.lastDiscussedPlace);
       }
 
       // If changes were committed to real state (not simulation and not rejected), apply them to parent dashboard
@@ -169,10 +192,10 @@ export function TripCopilotChat({
             <div className="flex items-center space-x-2">
               <h3 className="text-sm font-semibold tracking-tight text-white">Trip Copilot</h3>
               <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                Action Agent
+                Conversational AI
               </span>
             </div>
-            <p className="text-[11px] text-slate-300">Natural language management & deterministic replanning</p>
+            <p className="text-[11px] text-slate-300">Context-aware travel advisor & deterministic replanning</p>
           </div>
         </div>
 
@@ -219,13 +242,25 @@ export function TripCopilotChat({
                     : 'bg-white border border-slate-200 text-slate-800 shadow-2xs'
                 }`}
               >
-                {/* Action / Simulation Badge */}
+                {/* Mode / Action / Simulation Badge */}
                 {msg.actionExecuted && msg.role === 'assistant' && (
                   <div className="mb-2 flex items-center space-x-1.5">
                     {msg.isSimulation ? (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                         <Clock className="w-3 h-3 mr-1" />
                         Simulation Mode (Non-destructive)
+                      </span>
+                    ) : msg.conversationMode === 'GENERAL_CONVERSATION' ||
+                      msg.conversationMode === 'CURRENT_PLAN_QUESTION' ||
+                      msg.actionExecuted === 'SUGGEST_IMPROVEMENTS' ||
+                      msg.actionExecuted === 'CLARIFICATION_NEEDED' ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                        <Sparkles className="w-3 h-3 mr-1 text-indigo-500" />
+                        {msg.conversationMode === 'GENERAL_CONVERSATION'
+                          ? 'Travel Advisor'
+                          : msg.actionExecuted === 'SUGGEST_IMPROVEMENTS'
+                            ? 'Tailored Recommendations'
+                            : 'Trip Analysis'}
                       </span>
                     ) : (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">

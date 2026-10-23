@@ -18,6 +18,38 @@ import {
 } from '../domain';
 
 /**
+ * Four distinct Conversational Intelligence Modes
+ */
+export type ConversationMode =
+  | 'GENERAL_CONVERSATION'
+  | 'CURRENT_PLAN_QUESTION'
+  | 'SIMULATION_AND_RECOMMENDATION'
+  | 'ACTION_EXECUTION';
+
+/**
+ * Structured User Preference Memory tracked across conversation turns
+ */
+export interface CopilotUserPreferences {
+  preferredCategories: string[];
+  dislikedCategories: string[];
+  crowdPreference?: 'low' | 'moderate' | 'any';
+  pacePreference?: 'relaxed' | 'moderate' | 'packed';
+  budgetSensitivity?: 'low' | 'moderate' | 'high';
+  walkingTolerance?: 'low' | 'medium' | 'high';
+  notes: string[];
+}
+
+/**
+ * Pending proposal from a simulation or recommendation that can be confirmed in a follow-up turn
+ */
+export interface PendingActionProposal {
+  actionType: CopilotActionType;
+  parameters: Record<string, unknown>;
+  description: string;
+  proposedAt?: string;
+}
+
+/**
  * Controlled Copilot Action Types
  */
 export type CopilotActionType =
@@ -26,6 +58,7 @@ export type CopilotActionType =
   | 'REMOVE_PLACE'
   | 'REPLACE_PLACE'
   | 'REORDER_PLACE'
+  | 'MAKE_LESS_TIRING'
   // Constraint Modifications
   | 'CHANGE_BUDGET'
   | 'CHANGE_START_TIME'
@@ -44,9 +77,12 @@ export type CopilotActionType =
   | 'SUGGEST_IMPROVEMENTS'
   | 'EXPLAIN_ITINERARY'
   | 'INFORMATIONAL_QUESTION'
+  | 'GENERAL_CONVERSATION'
+  | 'UPDATE_PREFERENCES'
   | 'SEARCH_PLACES'
   | 'GET_PLACE_DETAILS'
   | 'CLARIFICATION_NEEDED'
+  | 'INFEASIBLE_REQUEST'
   | 'NO_OP';
 
 /**
@@ -155,6 +191,11 @@ export interface CopilotTripContext {
   }>;
   recentChanges?: string[];
   canUndo: boolean;
+  userPreferences?: CopilotUserPreferences;
+  pendingProposal?: PendingActionProposal;
+  lastDiscussedPlace?: string;
+  hasItinerary: boolean;
+  planningWindowMinutes: number;
 }
 
 /**
@@ -192,11 +233,15 @@ export interface CopilotMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: string;
+  conversationMode?: ConversationMode;
   actionExecuted?: CopilotActionType;
+  actionParameters?: Record<string, unknown>;
   isSimulation?: boolean;
   diff?: CopilotDiff;
   suggestedActions?: string[];
   infeasibleNotice?: string;
+  pendingProposal?: PendingActionProposal;
+  discussedPlace?: string;
   actionLinks?: {
     googleMapsUrl?: string;
     directionsUrl?: string;
@@ -208,11 +253,17 @@ export interface CopilotMessage {
  */
 export interface CopilotToolDecision {
   actionType: CopilotActionType;
+  conversationMode?: ConversationMode;
   parameters: Record<string, unknown>;
   isSimulation: boolean;
   isQuestionOnly: boolean;
   requiresClarification: boolean;
   clarificationQuestion?: string;
+  conversationalReply?: string;
+  discussedPlace?: string;
+  preferenceUpdate?: Partial<CopilotUserPreferences>;
+  pendingProposal?: PendingActionProposal;
+  infeasibleReason?: string;
   reasoning: string;
 }
 
@@ -222,6 +273,7 @@ export interface CopilotToolDecision {
 export interface CopilotEngineResult {
   success: boolean;
   reply: string;
+  conversationMode?: ConversationMode;
   actionExecuted?: CopilotActionType;
   isSimulation?: boolean;
   diff?: CopilotDiff;
@@ -229,6 +281,10 @@ export interface CopilotEngineResult {
   updatedItinerary?: FinalItinerary;
   updatedPlannerState?: PlannerState;
   updatedHistory?: CopilotHistoryItem[];
+  updatedPreferences?: CopilotUserPreferences;
+  pendingProposal?: PendingActionProposal;
+  lastDiscussedPlace?: string;
+  toolsCalled?: string[];
   suggestedActions?: string[];
   infeasibleNotice?: string;
   actionLinks?: {
@@ -237,3 +293,4 @@ export interface CopilotEngineResult {
   };
   error?: string;
 }
+
