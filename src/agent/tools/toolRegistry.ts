@@ -202,8 +202,12 @@ export class AgentToolRegistry {
       end,
       interests: tripConstraints.interests || [],
       availableTripMinutes,
-      budget: { total: tripConstraints.budget.total, currency: tripConstraints.budget.currency },
+      budget: tripConstraints.budget
+        ? { total: tripConstraints.budget.total, currency: tripConstraints.budget.currency }
+        : undefined,
       travelMode: tripConstraints.travelMode,
+      pace: tripConstraints.pace,
+      crowdPreference: tripConstraints.crowdPreference,
       poolTargetSize: args.poolTargetSize || 12,
       bypassCache: false,
     });

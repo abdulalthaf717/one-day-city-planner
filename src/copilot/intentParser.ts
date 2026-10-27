@@ -78,7 +78,7 @@ export class CopilotIntentParser {
     // If deterministic semantic parser matched a specific high-confidence pattern, return it directly
     const isEligibleForGroq =
       ruleBasedDecision.reasoning === 'Open-ended conversational or informational message.' ||
-      ruleBasedDecision.reasoning === 'Open-ended recommendation request.';
+      ruleBasedDecision.reasoning.includes('Contextual follow-up');
 
     if (!isEligibleForGroq) {
       return ruleBasedDecision;
@@ -127,6 +127,134 @@ export class CopilotIntentParser {
     const pendingProposal = this.extractPendingProposal(conversationHistory, context);
 
     // -------------------------------------------------------------
+    // Check 0: Explicit Itinerary Generation & Plan Proposal Confirmation
+    // e.g. "Plan a relaxed historical day in Hyderabad, avoiding crowded places, with a budget of ₹2500."
+    //      "Plan a relaxed historical day in Hyderabad with my current preferences."
+    //      "Yes, generate the itinerary.", "Generate the itinerary", "Plan my day"
+    // -------------------------------------------------------------
+    const lastAssistantMessage = [...conversationHistory].reverse().find((m) => m.role === 'assistant');
+    const lastOfferedPlanGeneration = Boolean(
+      lastAssistantMessage &&
+      /(?:generate|prepare|create|build)\s+(?:an?\s+|the\s+|a\s+preliminary\s+)?itinerary/i.test(lastAssistantMessage.content)
+    );
+
+    const isDirectGenerationPhrase =
+      /(?:generate|create|build|prepare)\s+(?:an?\s+|the\s+|my\s+)?itinerary\b/i.test(lower) ||
+      /^(?:can you\s+|please\s+)?(?:generate|plan|create|build|prepare|make)\s+(?:me\s+)?(?:a|an|the|my)?\s*(?:[\w-]+\s+){0,4}(?:day|trip|itinerary|plan)\b/i.test(lower) ||
+      /^(?:yes,?\s*)?(?:please\s*)?plan\s+(?:my\s+)?day\b/i.test(lower) ||
+      /^(?:yes,?\s*)?(?:please\s*)?generate\s+(?:the\s+|my\s+)?itinerary\b/i.test(lower) ||
+      /\bplan\s+(?:a|an|my)?\s*(?:[\w-]+\s+){0,4}(?:day|trip|itinerary)\b/i.test(lower) ||
+      /^(?:please\s*)?plan\s+(?:this|my|the)\s+day\b/i.test(lower);
+
+    const isGenerationConfirmation =
+      (pendingProposal?.actionType === 'GENERATE_ITINERARY' || (!context.hasItinerary && lastOfferedPlanGeneration)) &&
+      (/^(?:yes,?\s*)?(?:go ahead|please do|let's do it|lets do it|sounds good|do it|generate it|proceed|confirm)\b/i.test(lower) ||
+        lower === 'yes' ||
+        lower === 'yes please');
+
+    // Guard: ensure it is NOT an attraction question, advice question, or modifying an existing active plan
+    const isAttractionOrInfoQuestion =
+      /^(?:what is|what's|tell me about|why is|how is|why did you|why would you|how much|what would you recommend|any suggestions|can we add|can i add|remove|replace|swap|what if)\b/i.test(lower) ||
+      (context.hasItinerary && /(?:can we\s+)?make (?:the trip\s+|it\s+)?(?:less tiring|more relaxed|cheaper)/i.test(lower));
+
+    if ((isDirectGenerationPhrase || isGenerationConfirmation) && !isAttractionOrInfoQuestion) {
+      // 1. Extract inline pace if specified
+      let inlinePace: 'relaxed' | 'moderate' | 'packed' | undefined;
+      if (/\b(?:relaxed|unhurried|leisurely|slow)\b/i.test(lower)) {
+        inlinePace = 'relaxed';
+      } else if (/\b(?:packed|ambitious|fast)\b/i.test(lower)) {
+        inlinePace = 'packed';
+      } else if (/\b(?:moderate|balanced)\b/i.test(lower)) {
+        inlinePace = 'moderate';
+      }
+
+      // 3. Extract inline crowd preference
+      let inlineCrowd: 'low' | 'moderate' | 'any' | undefined;
+      if (/(?:avoid|avoiding|dislike|no|low|less|without|steer clear of)\s+(?:crowd|crowds|crowded|busy)/i.test(lower) ||
+          /\b(?:quieter|calmer|peaceful)\b/i.test(lower)) {
+        inlineCrowd = 'low';
+      } else if (/\b(?:any crowd|popular|busy)\b/i.test(lower)) {
+        inlineCrowd = 'any';
+      }
+
+      // 4. Extract inline interests
+      const inlineInterests: string[] = [];
+      if (/\b(?:histor|heritage|ancient|monument|fort|palace)/i.test(lower)) inlineInterests.push('History');
+      if (/\b(?:nature|park|garden|outdoor|lake)/i.test(lower)) inlineInterests.push('Nature');
+      if (/\b(?:architect|design)/i.test(lower)) inlineInterests.push('Architecture');
+      if (/\b(?:food|dining|culinary|biryani)/i.test(lower)) inlineInterests.push('Food');
+      if (/\b(?:museum|culture|cultural)/i.test(lower)) inlineInterests.push('Culture');
+      if (/\b(?:shopping|bazaar|market)/i.test(lower)) inlineInterests.push('Shopping');
+      if (/\b(?:photography|photo)/i.test(lower)) inlineInterests.push('Photography');
+      if (/\b(?:religious|spirit|temple|mosque)/i.test(lower)) inlineInterests.push('Religious');
+
+      // 5. Extract inline city if specified (e.g. "in Hyderabad")
+      let inlineCity: string | undefined;
+      const cityM = text.match(/\bin\s+([A-Z][a-zA-Z\s]+?)(?:,|\.|\s+with|\s+avoiding|\s+for|\s+and|$)/);
+      if (cityM && cityM[1].trim()) {
+        inlineCity = cityM[1].trim();
+      }
+
+      // 6. Check for missing essential required inputs before generation
+      const targetCity = inlineCity || context.city;
+      const targetStart = context.startPoint?.name;
+      const targetEnd = context.endPoint?.name;
+      const targetStartTime = context.timeWindow?.startTime;
+      const targetEndTime = context.timeWindow?.latestArrivalTime;
+      const targetMode = context.travelMode;
+      const targetPax = context.numberOfPeople;
+
+      const missingFields: string[] = [];
+      if (!targetCity || !targetCity.trim()) missingFields.push('city');
+      if (!targetStart || !targetStart.trim()) missingFields.push('starting location');
+      if (!targetEnd || !targetEnd.trim()) missingFields.push('destination end point');
+      if (!targetStartTime) missingFields.push('start time');
+      if (!targetEndTime) missingFields.push('latest arrival deadline');
+      if (!targetMode) missingFields.push('travel mode');
+      if (!targetPax || targetPax < 1) missingFields.push('number of travelers');
+
+      if (missingFields.length > 0) {
+        return {
+          actionType: 'CLARIFICATION_NEEDED',
+          conversationMode: 'ACTION_EXECUTION',
+          parameters: { missingFields },
+          isSimulation: false,
+          isQuestionOnly: false,
+          requiresClarification: true,
+          clarificationQuestion: `Please provide your ${missingFields.join(', ')} so I can build your itinerary.`,
+          reasoning: `Missing essential trip constraint(s): ${missingFields.join(', ')}.`,
+        };
+      }
+
+      const mergedInterests = inlineInterests.length > 0
+        ? inlineInterests
+        : (context.userPreferences?.preferredCategories?.length ? context.userPreferences.preferredCategories : context.interests);
+
+      return {
+        actionType: 'GENERATE_ITINERARY',
+        conversationMode: 'ACTION_EXECUTION',
+        parameters: {
+          explicitCity: targetCity,
+          explicitPace: inlinePace || context.userPreferences?.pacePreference,
+          explicitCrowd: inlineCrowd || context.userPreferences?.crowdPreference,
+          explicitInterests: mergedInterests,
+        },
+        preferenceUpdate: {
+          preferredCategories: inlineInterests.length > 0 ? inlineInterests : undefined,
+          crowdPreference: inlineCrowd,
+          pacePreference: inlinePace,
+          notes: [text],
+        },
+        isSimulation: false,
+        isQuestionOnly: false,
+        requiresClarification: false,
+        reasoning: isGenerationConfirmation
+          ? 'User confirmed generating the itinerary with current preferences.'
+          : 'User requested explicit itinerary generation with available trip constraints.',
+      };
+    }
+
+    // -------------------------------------------------------------
     // Check 1: Confirmation / Apply Last Simulation or Recommendation
     // e.g. "Apply that", "That sounds good. Let's do it.", "Yes, let's do it"
     // -------------------------------------------------------------
@@ -149,7 +277,7 @@ export class CopilotIntentParser {
           reasoning: `User confirmed applying previously simulated or recommended action (${pendingProposal.description}).`,
         };
       }
-      if (lastDiscussedPlace) {
+      if (lastDiscussedPlace && context.hasItinerary) {
         return {
           actionType: 'ADD_PLACE',
           conversationMode: 'ACTION_EXECUTION',
@@ -339,7 +467,11 @@ export class CopilotIntentParser {
       !lower.startsWith('remove ') &&
       !lower.startsWith('replace ') &&
       !lower.startsWith('swap ') &&
-      !lower.startsWith('add ');
+      !lower.startsWith('add ') &&
+      !lower.includes('plan ') &&
+      !lower.includes('generate ') &&
+      !lower.includes('build ') &&
+      !lower.includes('create ');
 
     if (isPreferenceStatement) {
       const prefUpdate: Partial<CopilotUserPreferences> = {
@@ -495,6 +627,9 @@ export class CopilotIntentParser {
       mentionedProfiles.length < 2
     ) {
       const isGeneralRecommendation =
+        !context.hasItinerary &&
+        !lower.includes('remaining time') &&
+        !lower.includes('unused time') &&
         /(?:what would you recommend|what do you recommend|any recommendations|what should i visit|where should i go)\b/i.test(
           lower
         );
@@ -506,6 +641,13 @@ export class CopilotIntentParser {
         isSimulation: false,
         isQuestionOnly: false,
         requiresClarification: false,
+        pendingProposal: !context.hasItinerary
+          ? {
+              actionType: 'GENERATE_ITINERARY',
+              parameters: {},
+              description: 'Generate a verified itinerary based on these recommendations',
+            }
+          : undefined,
         reasoning: isGeneralRecommendation
           ? 'Open-ended recommendation request.'
           : 'User requested proactive or preference-aware itinerary recommendations.',
@@ -567,6 +709,79 @@ export class CopilotIntentParser {
     }
 
     // -------------------------------------------------------------
+    // Check 12B: Contextual Recommendation Follow-Up & Attraction Comparison
+    // e.g. "Why would you recommend that place over the other options?",
+    //      "What makes that place special?", "Tell me more about the second attraction"
+    // -------------------------------------------------------------
+    const isPlanExplanation =
+      lower.includes('this plan') ||
+      lower.includes('the plan') ||
+      lower.includes('this itinerary') ||
+      lower.includes('the itinerary');
+
+    const isRecommendationFollowUp =
+      !isPlanExplanation &&
+      (/(?:why (?:would|did) you (?:recommend|choose)|recommend (?:that place|it|them)|choose (?:that place|it|them) over|over the other|which of (?:those|them)|what makes (?:that|it) special|tell me more about (?:the|that)|why (?:that|those) (?:place|places|options)|compare (?:those|them|the options)|which (?:one|place) would you (?:choose|pick|recommend))\b/i.test(
+        lower
+      ) ||
+      /(?:tell me more about|what about|how about|explain|describe)\s+(?:the\s+)?(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|last|1st|2nd|3rd|4th|5th|6th|7th|8th|9th|10th)\s+(?:attraction|place|stop|option|recommendation)\b/i.test(
+        lower
+      ));
+
+    if (isRecommendationFollowUp) {
+      const recentRecs = this.extractRecommendedPlacesFromHistory(conversationHistory);
+      const ordinalMatch = lower.match(
+        /\b(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|last|1st|2nd|3rd|4th|5th|6th|7th|8th|9th|10th)\s+(?:attraction|place|stop|option|recommendation)\b/i
+      );
+      let targetPlace: string | undefined = undefined;
+
+      if (ordinalMatch) {
+        const ord = ordinalMatch[1].toLowerCase();
+        let idx = -1;
+        if (ord === 'first' || ord === '1st') idx = 0;
+        else if (ord === 'second' || ord === '2nd') idx = 1;
+        else if (ord === 'third' || ord === '3rd') idx = 2;
+        else if (ord === 'fourth' || ord === '4th') idx = 3;
+        else if (ord === 'fifth' || ord === '5th') idx = 4;
+        else if (ord === 'sixth' || ord === '6th') idx = 5;
+        else if (ord === 'last' && recentRecs.length > 0) idx = recentRecs.length - 1;
+
+        if (idx >= 0 && idx < recentRecs.length) {
+          targetPlace = recentRecs[idx];
+        } else {
+          // If user specifically asked about an ordinal that is out of range
+          return {
+            actionType: 'INFORMATIONAL_QUESTION',
+            conversationMode: 'SIMULATION_AND_RECOMMENDATION',
+            parameters: { question: text },
+            isSimulation: false,
+            isQuestionOnly: true,
+            requiresClarification: true,
+            clarificationQuestion: `I only recommended ${recentRecs.length} preliminary attractions in my previous message (${recentRecs.join(', ')}), so there isn't a ${ordinalMatch[1]} option yet. Could you clarify which one you would like to explore further, or would you like me to suggest additional sights?`,
+            reasoning: 'Ordinal reference exceeded the number of recommended attractions.',
+          };
+        }
+      } else {
+        targetPlace = singleProfile?.canonicalName || lastDiscussedPlace;
+      }
+
+      return {
+        actionType: 'INFORMATIONAL_QUESTION',
+        conversationMode: 'SIMULATION_AND_RECOMMENDATION',
+        parameters: {
+          question: text,
+          targetPlace,
+          recommendedPlaces: recentRecs,
+        },
+        isSimulation: false,
+        isQuestionOnly: true,
+        requiresClarification: false,
+        discussedPlace: targetPlace,
+        reasoning: 'Contextual follow-up regarding recommendations or discussed attractions.',
+      };
+    }
+
+    // -------------------------------------------------------------
     // Check 13: Read-Only Current-Plan & Evaluative Questions (Mode B & C)
     // e.g. "How much money is left?", "Why did you choose this plan?", "Should we add Charminar?"
     // -------------------------------------------------------------
@@ -621,7 +836,7 @@ export class CopilotIntentParser {
       const oldTarget = replaceMatch[1].trim();
       const newTarget = replaceMatch[2].replace(/[.?!]$/, '').trim();
 
-      const resolvedOld = this.resolveStopReference(oldTarget, context);
+      const resolvedOld = this.resolveStopReference(oldTarget, context, conversationHistory);
       if (resolvedOld.ambiguous) {
         return {
           actionType: 'CLARIFICATION_NEEDED',
@@ -684,7 +899,7 @@ export class CopilotIntentParser {
         targetStr = lastDiscussedPlace;
       }
 
-      const resolved = this.resolveStopReference(targetStr, context);
+      const resolved = this.resolveStopReference(targetStr, context, conversationHistory);
 
       if (resolved.ambiguous) {
         return {
@@ -732,7 +947,7 @@ export class CopilotIntentParser {
       const placeStr = reorderMatch[1].trim();
       const targetStr = reorderMatch[2].trim();
 
-      const resolved = this.resolveStopReference(placeStr, context);
+      const resolved = this.resolveStopReference(placeStr, context, conversationHistory);
       let targetPos = 1;
       if (targetStr.includes('first') || targetStr.includes('1')) targetPos = 1;
       else if (targetStr.includes('second') || targetStr.includes('2')) targetPos = 2;
@@ -822,67 +1037,32 @@ export class CopilotIntentParser {
     }
 
     // -------------------------------------------------------------
-    // Check 18: Change Budget
+    // Check 18: Cost & Budget Inquiries (Handled honestly without execution)
     // -------------------------------------------------------------
-    const budgetMatch =
-      lower.match(
-        /(?:budget|money|cost|spend|limit)\s+(?:is|to|of)?\s*(?:only\s*)?(?:₹|rs\.?|inr|\$)?\s*(\d+)/i
-      ) ||
-      lower.match(/(?:budget|money|cost|spend|limit).*?(?:₹|rs\.?|inr|\$)\s*(\d+)/i) ||
-      lower.match(
-        /(?:reduce|increase|change|set)\s+(?:the\s+)?budget\s+to\s*(?:₹|rs\.?|inr|\$)?\s*(\d+)/i
-      );
-
-    if (budgetMatch) {
-      const budgetAmount = parseInt(budgetMatch[1], 10);
-      return {
-        actionType: 'CHANGE_BUDGET',
-        conversationMode: isSimulation ? 'SIMULATION_AND_RECOMMENDATION' : 'ACTION_EXECUTION',
-        parameters: { total: budgetAmount },
-        isSimulation,
-        isQuestionOnly: false,
-        requiresClarification: false,
-        pendingProposal: isSimulation
-          ? {
-              actionType: 'CHANGE_BUDGET',
-              parameters: { total: budgetAmount },
-              description: `Change total budget to ₹${budgetAmount}`,
-            }
-          : undefined,
-        reasoning: `Update total trip budget to ₹${budgetAmount}.`,
-      };
-    }
-
-    if (
+    const isBudgetOrCostQuery =
+      lower.includes('budget') ||
       lower.includes('make it cheaper') ||
       lower.includes('make the trip cheaper') ||
       lower.includes('reduce budget') ||
       lower.includes('cut down the cost') ||
-      lower.includes('lower the cost')
-    ) {
-      const currentBudget = context.budget.total;
-      const spent = context.budget.spent;
-      // If current spend is already well below 70% of budget, tighten budget below current spend so cost drops too
-      const reducedBudget =
-        spent > 200 && spent < currentBudget * 0.7
-          ? Math.max(200, spent - 200)
-          : Math.max(500, Math.round((currentBudget * 0.7) / 100) * 100);
+      lower.includes('lower the cost') ||
+      lower.includes('cheaper') ||
+      lower.includes('how much money') ||
+      lower.includes('ticket price') ||
+      lower.includes('admission fee') ||
+      lower.includes('can i afford');
+
+    if (isBudgetOrCostQuery) {
       return {
-        actionType: 'CHANGE_BUDGET',
-        conversationMode: isSimulation ? 'SIMULATION_AND_RECOMMENDATION' : 'ACTION_EXECUTION',
-        parameters: { total: reducedBudget, trimExpensiveStop: true },
-        isSimulation,
-        isQuestionOnly: false,
+        actionType: 'INFORMATIONAL_QUESTION',
+        conversationMode: 'GENERAL_CONVERSATION',
+        parameters: {},
+        isSimulation: false,
+        isQuestionOnly: true,
         requiresClarification: false,
-        preferenceUpdate: { budgetSensitivity: 'high' },
-        pendingProposal: isSimulation
-          ? {
-              actionType: 'CHANGE_BUDGET',
-              parameters: { total: reducedBudget, trimExpensiveStop: true },
-              description: `Reduce budget to ₹${reducedBudget} to make the trip cheaper`,
-            }
-          : undefined,
-        reasoning: `Reduce budget from ₹${currentBudget} to ₹${reducedBudget} to make itinerary cheaper.`,
+        conversationalReply:
+          'The One-Day City Planner focuses on time windows, opening hours, route feasibility, and sightseeing quality. We do not calculate or track ticket prices, admission fees, or trip budgets because live attraction pricing cannot be reliably verified. We recommend checking official attraction websites or booking counters directly for current pricing.',
+        reasoning: 'Inquiry relates to budget or cost. Explained that verified pricing and budget calculations are not provided.',
       };
     }
 
@@ -1036,6 +1216,40 @@ export class CopilotIntentParser {
   }
 
   /**
+   * Extracts recommended attraction names from recent assistant messages in conversation history
+   */
+  public extractRecommendedPlacesFromHistory(
+    conversationHistory: CopilotMessage[] = []
+  ): string[] {
+    for (let i = conversationHistory.length - 1; i >= 0; i--) {
+      const msg = conversationHistory[i];
+      if (msg.role === 'assistant') {
+        const profiles = findMentionedProfiles(msg.content);
+        if (profiles.length > 0) {
+          const lower = msg.content.toLowerCase();
+          const ordered = [...profiles].sort((a, b) => {
+            const idxA = Math.min(
+              ...a.aliases.map((al) => {
+                const pos = lower.indexOf(al);
+                return pos === -1 ? 999999 : pos;
+              })
+            );
+            const idxB = Math.min(
+              ...b.aliases.map((al) => {
+                const pos = lower.indexOf(al);
+                return pos === -1 ? 999999 : pos;
+              })
+            );
+            return idxA - idxB;
+          });
+          return ordered.map((p) => p.canonicalName);
+        }
+      }
+    }
+    return [];
+  }
+
+  /**
    * Extracts the most recently discussed attraction from context or conversation history
    */
   public extractLastDiscussedPlace(
@@ -1095,9 +1309,6 @@ export class CopilotIntentParser {
             else if (prevLower.includes('bicycle') || prevLower.includes('cycle'))
               inferredParams = { travelMode: 'bicycle' };
             else if (prevLower.includes('drive')) inferredParams = { travelMode: 'drive' };
-          } else if (msg.actionExecuted === 'CHANGE_BUDGET') {
-            const m = prevLower.match(/(\d+)/);
-            if (m) inferredParams = { total: parseInt(m[1], 10) };
           } else if (msg.actionExecuted === 'ADD_PLACE') {
             const prof = findAttractionProfile(prevUser.content);
             if (prof) inferredParams = { placeName: prof.canonicalName, forceInclude: true };
@@ -1119,7 +1330,8 @@ export class CopilotIntentParser {
    */
   private resolveStopReference(
     reference: string,
-    context: CopilotTripContext
+    context: CopilotTripContext,
+    conversationHistory: CopilotMessage[] = []
   ): {
     stopTitle?: string;
     stopIndex?: number;
@@ -1130,6 +1342,57 @@ export class CopilotIntentParser {
     const stops = context.currentStops;
 
     if (stops.length === 0) {
+      const recs = this.extractRecommendedPlacesFromHistory(conversationHistory);
+      if (recs.length > 0) {
+        if (
+          refLower.includes('first') ||
+          refLower === '1' ||
+          refLower === 'stop 1' ||
+          refLower === 'place 1' ||
+          refLower === 'attraction 1'
+        ) {
+          return { stopTitle: recs[0], stopIndex: 1, ambiguous: false };
+        }
+        if (
+          refLower.includes('second') ||
+          refLower === '2' ||
+          refLower === 'stop 2' ||
+          refLower === 'place 2' ||
+          refLower === 'attraction 2'
+        ) {
+          if (recs.length >= 2) return { stopTitle: recs[1], stopIndex: 2, ambiguous: false };
+        }
+        if (
+          refLower.includes('third') ||
+          refLower === '3' ||
+          refLower === 'stop 3' ||
+          refLower === 'place 3' ||
+          refLower === 'attraction 3'
+        ) {
+          if (recs.length >= 3) return { stopTitle: recs[2], stopIndex: 3, ambiguous: false };
+        }
+        if (refLower.includes('last') || refLower.includes('final')) {
+          return { stopTitle: recs[recs.length - 1], stopIndex: recs.length, ambiguous: false };
+        }
+        if (
+          refLower.includes('fourth') ||
+          refLower.includes('fifth') ||
+          refLower.includes('sixth')
+        ) {
+          return {
+            ambiguous: true,
+            clarificationQuestion: `I previously recommended ${recs.length} attractions (${recs.join(', ')}). Which one would you like to choose?`,
+          };
+        }
+        const exact = recs.filter((r) => r.toLowerCase().includes(refLower));
+        if (exact.length === 1) return { stopTitle: exact[0], ambiguous: false };
+        if (exact.length > 1) {
+          return {
+            ambiguous: true,
+            clarificationQuestion: `I found multiple matching attractions: ${exact.join(' and ')}. Which one do you mean?`,
+          };
+        }
+      }
       return { ambiguous: false };
     }
 
@@ -1267,7 +1530,7 @@ export class CopilotIntentParser {
     if (!apiKey) return null;
 
     const Groq = (await import('groq-sdk')).default;
-    const client = new Groq({ apiKey, timeout: 10000 });
+    const client = new Groq({ apiKey, timeout: 25000 });
 
     const lastPlace = this.extractLastDiscussedPlace(conversationHistory, context);
     const pending = this.extractPendingProposal(conversationHistory, context);
@@ -1276,29 +1539,39 @@ export class CopilotIntentParser {
     const systemPrompt = `You are the Trip Copilot — an intelligent, conversational AI travel assistant for a One-Day City Planner.
 You help travelers understand, discuss, simulate, and modify their active day trip in ${context.city}.
 
-CONVERSATIONAL VOICE & RULES:
+CONVERSATIONAL VOICE & STRICT FACTUAL GROUNDING RULES:
 1. Speak naturally, thoughtfully, and directly like an expert local travel advisor. Avoid robotic openings ("Sure!", "Certainly!", "As an AI").
-2. The user's latest message determines what your response must address. General questions deserve direct, helpful answers, not unrelated itinerary summaries.
-3. If no itinerary has been generated yet, clearly acknowledge that planning is underway; never answer as if a completed or optimized route already exists.
-4. Expressing a preference (e.g. "I prefer history", "I don't enjoy crowded attractions") is preference sharing, NOT authorization to mutate the active itinerary. Acknowledge preferences and suggest options; never describe unexecuted changes as completed actions.
-5. Recommendations should be specific and relevant to earlier expressed preferences, trip constraints, and conversation history. Explain why recommendations fit.
-6. Never fabricate coordinates, prices, opening hours, or crowd levels. Unknown metrics must not be presented as verified facts.
-7. Distinguish between FOUR modes:
+2. The user's latest message determines what your response must address. General questions and follow-ups deserve direct, helpful answers, not unrelated itinerary summaries.
+3. CONTEXTUAL FOLLOW-UPS: If the user asks a follow-up about previous recommendations (e.g. "Why would you recommend that place over the other options?", "What makes that place special?", "Which of those places would you choose for me?"), refer back to the previously recommended attractions in the conversation history and explain the trade-offs or clarify. NEVER reply that "no itinerary has been generated yet" to a recommendation follow-up!
+4. DISTINGUISH PRELIMINARY RECOMMENDATIONS FROM CONFIRMED ITINERARIES:
+   - When no itinerary has been generated yet, clearly state that recommendations are preliminary suggestions for their daytime window (reference their ${context.planningWindowMinutes || 570}-minute day window from ${context.timeWindow.startTime} to ${context.timeWindow.latestArrivalTime}).
+   - Route feasibility, exact transit times, and opening hours must be verified by the route optimizer when an itinerary is generated.
+   - Do NOT present a multi-stop sequence as confirmed or already validated.
+5. ACCURACY OF HERITAGE & UNESCO STATUS:
+   - Do NOT claim Golconda Fort or Charminar is an inscribed UNESCO World Heritage Site. Golconda Fort and the Qutb Shahi Monuments are on the UNESCO Tentative List, not inscribed World Heritage Sites.
+6. NATURAL CROWD & OPERATIONAL UNCERTAINTY:
+   - Communicate crowd levels with natural uncertainty (e.g. "they tend to feel calmer and less crowded, though visitor volume varies by day and time of day").
+   - NEVER make unsupported guarantees of zero crowds or completely empty grounds.
+   - Do not invent exact live crowd metrics, prices, or operating hours without qualification.
+7. PREFERENCES ARE NOT UNILATERAL MUTATIONS:
+   - Expressing or updating a preference is preference sharing, NOT authorization to mutate the active itinerary.
+   - Never describe unexecuted changes as completed actions.
+   - When acknowledging multiple preferences in one turn, integrate them into one cohesive answer rather than repeating boilerplate phrases.
+8. Distinguish between FOUR modes:
    - Mode A (General Conversation): Greetings, attraction details, comparisons, or user preference sharing -> Answer naturally in text WITHOUT calling itinerary mutation tools.
-   - Mode B (Current-Plan Questions): Questions about cost, timing, buffers, or why a stop was selected -> Use "explain_itinerary" or answer grounded strictly in the CURRENT TRIP CONTEXT.
-   - Mode C (Simulation & Recommendations): Hypothetical "What if..." questions -> Call "simulate_change"; improvement requests -> Call "suggest_improvements".
+   - Mode B (Current-Plan Questions): Questions about timing, buffers, or why a stop was selected in an ACTIVE plan -> Answer grounded strictly in CURRENT TRIP CONTEXT.
+   - Mode C (Simulation & Recommendations): Contextual recommendation questions, hypothetical "What if..." questions -> Simulate or recommend without mutating active itinerary.
    - Mode D (Action Execution): Explicit commands to add, remove, replace, reorder, make less tiring, or change constraints -> Call the corresponding structured tool.
-8. Resolve pronouns ("it", "that place") using Last Discussed Place (${lastPlace || 'none'}).
-9. Do not repeatedly end responses with an unnecessary request to apply changes.
+9. Resolve pronouns ("it", "that place") and ordinals ("second attraction") using conversation history and Last Discussed Place (${lastPlace || 'none'}).
+10. Do not repeatedly end responses with an unnecessary request to apply changes.
 
 CURRENT TRIP CONTEXT:
 - City: ${context.city} (${context.startPoint.name} -> ${context.endPoint.name})
 - Status: ${context.hasItinerary ? 'Itinerary is planned and active.' : 'No itinerary has been planned or generated yet (planning phase).'}
 - Planning Window Capacity: ${context.planningWindowMinutes} minutes (${context.timeWindow.startTime} to ${context.timeWindow.latestArrivalTime})
 ${context.hasItinerary ? `- Planned Arrival: ${context.plannedArrivalTime}
-- Current Visited Stops: ${context.currentStops.map((s) => `#${s.index} ${s.title} (${s.arrivalTime}-${s.departureTime}, ${context.budget.currency}${s.costTotal})`).join('; ')}
+- Current Visited Stops: ${context.currentStops.map((s) => `#${s.index} ${s.title} (${s.arrivalTime}-${s.departureTime})`).join('; ')}
 - Safety Buffer: ${context.safetyBufferMinutes}m, Unused Available Time: ${context.unusedAvailableMinutes}m` : '- Current Stops: None yet planned.'}
-- Budget: ${context.budget.currency}${context.budget.total} (Spent: ${context.budget.currency}${context.budget.spent}, Remaining: ${context.budget.currency}${context.budget.remaining})
 - Travel Mode: ${context.travelMode}, Travelers: ${context.numberOfPeople}
 - User Preferences: Preferred=[${prefs?.preferredCategories?.join(', ') || context.interests.join(', ')}], Disliked=[${prefs?.dislikedCategories?.join(', ') || 'none'}], Crowd=[${prefs?.crowdPreference || 'any'}], Pace=[${prefs?.pacePreference || 'moderate'}]
 - Last Discussed Place: ${lastPlace || 'none'}
@@ -1355,13 +1628,14 @@ ${context.hasItinerary ? `- Planned Arrival: ${context.plannedArrivalTime}
               : 'CURRENT_PLAN_QUESTION';
 
           return {
-            actionType: isGeneral ? 'GENERAL_CONVERSATION' : 'INFORMATIONAL_QUESTION',
+            actionType: ruleBasedDecision?.actionType || (isGeneral ? 'GENERAL_CONVERSATION' : 'INFORMATIONAL_QUESTION'),
             conversationMode: resolvedMode,
             parameters: { question: userMessage },
             isSimulation: isSimOrRec && Boolean(ruleBasedDecision?.isSimulation),
             isQuestionOnly: true,
             requiresClarification: false,
             conversationalReply: cleanedContent,
+            pendingProposal: ruleBasedDecision?.pendingProposal,
             reasoning: 'Groq direct conversational response (no tool call required).',
           };
         }
@@ -1378,11 +1652,11 @@ ${context.hasItinerary ? `- Planned Arrival: ${context.plannedArrivalTime}
     }
 
     const actionMap: Record<string, CopilotActionType> = {
+      generate_itinerary: 'GENERATE_ITINERARY',
       add_place: 'ADD_PLACE',
       remove_place: 'REMOVE_PLACE',
       replace_place: 'REPLACE_PLACE',
       reorder_place: 'REORDER_PLACE',
-      change_budget: 'CHANGE_BUDGET',
       change_time: 'CHANGE_TIME',
       change_travel_mode: 'CHANGE_TRAVEL_MODE',
       change_people: 'CHANGE_NUMBER_OF_PEOPLE',
@@ -1423,6 +1697,7 @@ ${context.hasItinerary ? `- Planned Arrival: ${context.plannedArrivalTime}
       isSimulation,
       isQuestionOnly,
       requiresClarification: false,
+      pendingProposal: ruleBasedDecision?.pendingProposal,
       preferenceUpdate: actionType === 'UPDATE_PREFERENCES' ? (args as Partial<CopilotUserPreferences>) : undefined,
       reasoning: `Groq tool call: ${toolName}`,
     };

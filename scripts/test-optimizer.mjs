@@ -90,7 +90,6 @@ function runSimpleBeamSearch(params) {
     lastId: 'START',
     currentMin: startMin,
     travelMins: 0,
-    cost: 0,
     score: 0,
     plannedEnd: startMin,
     safetyBuffer: initialReqBuffer,
@@ -134,18 +133,12 @@ function runSimpleBeamSearch(params) {
           continue; // End-point pressure / deadline violation
         }
 
-        const nextCost = state.cost + (cand.costPerPerson || 0) * pax;
-        if (nextCost > maxBudget) {
-          continue; // Budget exceeded
-        }
-
         const utility = cand.score + cand.durationMinutes * 0.2 - leg.durationMinutes * 0.3;
         const newState = {
           visited: [...state.visited, cand.id],
           lastId: cand.id,
           currentMin: departure,
           travelMins: state.travelMins + leg.durationMinutes,
-          cost: nextCost,
           score: state.score + utility,
           plannedEnd,
           safetyBuffer: reqBuffer,
@@ -204,39 +197,38 @@ try {
 }
 
 // -----------------------------------------------------------------
-// TEST C: Very Small Budget (₹200 for 2 people)
+// TEST C: Budget-Free Planning (Valid Schedule Without Budget Constraint)
 // -----------------------------------------------------------------
 try {
   const matrixC = {
     'START::END': { durationMinutes: 25, status: 'OK' },
-    'START::FREE_PARK': { durationMinutes: 10, status: 'OK' },
-    'FREE_PARK::END': { durationMinutes: 15, status: 'OK' },
-    'START::EXP_DINING': { durationMinutes: 10, status: 'OK' },
-    'EXP_DINING::END': { durationMinutes: 15, status: 'OK' },
+    'START::HIGH_SCORE_SITE': { durationMinutes: 10, status: 'OK' },
+    'HIGH_SCORE_SITE::END': { durationMinutes: 15, status: 'OK' },
+    'START::SECOND_SITE': { durationMinutes: 10, status: 'OK' },
+    'SECOND_SITE::END': { durationMinutes: 15, status: 'OK' },
   };
 
   const resC = runSimpleBeamSearch({
     startTime: '10:00',
     deadlineTime: '18:00',
-    maxBudget: 200,
     pax: 2,
     matrix: matrixC,
     endId: 'END',
     candidates: [
-      { id: 'FREE_PARK', durationMinutes: 45, costPerPerson: 0, score: 75 },
-      { id: 'EXP_DINING', durationMinutes: 60, costPerPerson: 450, score: 85 }, // ₹900 for 2 > ₹200
+      { id: 'HIGH_SCORE_SITE', durationMinutes: 45, score: 85 },
+      { id: 'SECOND_SITE', durationMinutes: 60, score: 75 },
     ],
   });
 
-  const passedC = resC.visited.includes('FREE_PARK') && !resC.visited.includes('EXP_DINING') && resC.cost <= 200;
+  const passedC = resC.visited.includes('HIGH_SCORE_SITE') && resC.visited.length > 0;
   report(
     'TEST C',
-    'Budget Sensitivity (Prunes Over-Budget Dining)',
+    'Budget-Free Planning (Valid Schedule Without Budget Constraint)',
     passedC,
-    `Free public park (₹0) selected; ₹900 dining rejected. Total cost: ₹${resC.cost} <= ₹200 budget.`
+    `High-scoring attraction selected without requiring budget inputs or monetary cost calculations. Planned end: ${minutesToTime(resC.plannedEnd)}.`
   );
 } catch (err) {
-  report('TEST C', 'Budget Sensitivity', false, err.message);
+  report('TEST C', 'Budget-Free Planning', false, err.message);
 }
 
 // -----------------------------------------------------------------

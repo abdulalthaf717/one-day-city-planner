@@ -34,7 +34,6 @@ export interface CopilotUserPreferences {
   dislikedCategories: string[];
   crowdPreference?: 'low' | 'moderate' | 'any';
   pacePreference?: 'relaxed' | 'moderate' | 'packed';
-  budgetSensitivity?: 'low' | 'moderate' | 'high';
   walkingTolerance?: 'low' | 'medium' | 'high';
   notes: string[];
 }
@@ -53,6 +52,8 @@ export interface PendingActionProposal {
  * Controlled Copilot Action Types
  */
 export type CopilotActionType =
+  // Itinerary Generation & Planning
+  | 'GENERATE_ITINERARY'
   // Itinerary Modifications
   | 'ADD_PLACE'
   | 'REMOVE_PLACE'
@@ -60,7 +61,6 @@ export type CopilotActionType =
   | 'REORDER_PLACE'
   | 'MAKE_LESS_TIRING'
   // Constraint Modifications
-  | 'CHANGE_BUDGET'
   | 'CHANGE_START_TIME'
   | 'CHANGE_END_TIME'
   | 'CHANGE_TIME'
@@ -117,11 +117,6 @@ export interface ReorderPlaceArgs {
   targetPosition: number; // 1-based index among visit stops
 }
 
-export interface ChangeBudgetArgs {
-  total: number;
-  currency?: string;
-}
-
 export interface ChangeTimeArgs {
   startTime?: string;
   latestArrivalTime?: string;
@@ -155,6 +150,14 @@ export interface ExplainArgs {
   question?: string;
 }
 
+export interface GenerateItineraryArgs {
+  city?: string;
+  pace?: 'relaxed' | 'moderate' | 'packed';
+  crowdPreference?: 'low' | 'moderate' | 'any';
+  interests?: string[];
+  userMessage?: string;
+}
+
 /**
  * Compact Structured Trip Context sent to LLM for natural reasoning
  */
@@ -163,7 +166,6 @@ export interface CopilotTripContext {
   startPoint: { name: string; coordinates?: { lat: number; lng: number } };
   endPoint: { name: string; coordinates?: { lat: number; lng: number } };
   timeWindow: { startTime: string; latestArrivalTime: string };
-  budget: { total: number; currency: string; spent: number; remaining: number };
   travelMode: TravelMode;
   numberOfPeople: number;
   interests: string[];
@@ -174,9 +176,7 @@ export interface CopilotTripContext {
     arrivalTime: string;
     departureTime: string;
     durationMinutes: number;
-    costTotal: number;
     category?: string;
-    isFree: boolean;
   }>;
   totalTravelMinutes: number;
   totalActivityMinutes: number;
@@ -187,7 +187,6 @@ export interface CopilotTripContext {
   availableCandidateSample: Array<{
     name: string;
     category?: string;
-    estimatedCost: number;
   }>;
   recentChanges?: string[];
   canUndo: boolean;
@@ -205,7 +204,6 @@ export interface CopilotDiff {
   addedStops: string[];
   removedStops: string[];
   reorderedStops?: string[];
-  costChange?: { from: number; to: number; currency: string };
   arrivalTimeChange?: { from: string; to: string };
   safetyBufferChange?: { from: number; to: number };
   unusedTimeChange?: { from: number; to: number };

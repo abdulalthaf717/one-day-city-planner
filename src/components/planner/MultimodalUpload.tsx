@@ -14,7 +14,6 @@ import {
   Calendar,
   MapPin,
   Clock,
-  DollarSign,
   X,
   AlertTriangle,
   RotateCcw,
@@ -266,7 +265,7 @@ export const MultimodalUpload: React.FC<MultimodalUploadProps> = ({
         estimatedDurationMin: 60,
         visitDurationSource: 'category_default',
         cost: {
-          currency: constraints.budget.currency,
+          currency: '₹',
           amountPerPerson: 0,
           totalForGroup: 0,
           isFree: true,
@@ -444,12 +443,6 @@ export const MultimodalUpload: React.FC<MultimodalUploadProps> = ({
                   <Clock className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                   <span>
                     Est. Visit: {analysisResult.verifiedPlace.estimatedVisitDurationMinutes || 60} minutes
-                  </span>
-                </div>
-                <div className="flex items-center space-x-1.5">
-                  <DollarSign className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                  <span>
-                    Cost: {analysisResult.verifiedPlace.cost.isFree ? 'Free Admission' : `₹${analysisResult.verifiedPlace.cost.amountPerPerson || 0}/person`}
                   </span>
                 </div>
                 <div className="flex items-center space-x-1.5">

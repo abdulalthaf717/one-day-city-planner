@@ -26,8 +26,8 @@ export const DEFAULT_SCORING_WEIGHTS: ScoringWeights = {
   interestRelevance: 0.40,
   geographicPracticality: 0.20,
   openingCompatibility: 0.05,
-  budgetCompatibility: 0.05,
-  qualitySignal: 0.15,
+  budgetCompatibility: 0.0,
+  qualitySignal: 0.20,
   diversityBonus: 0.05,
   travelBurdenPenalty: 0.10,
 };
@@ -44,6 +44,8 @@ export interface ScoringContext {
   peopleCount?: number;
   categoryFrequencies?: Record<string, number>;
   weights?: Partial<ScoringWeights>;
+  pace?: string;
+  crowdPreference?: string;
 }
 
 /**
@@ -102,27 +104,8 @@ export function scoreCandidate(
     openingScore = 65; // unverified/missing: slight discount, never presumed closed
   }
 
-  // 4. Budget Compatibility (0 - 100)
-  // Evaluates affordability within user's budget without giving zero-cost places an artificial advantage over affordable cultural sights.
-  let budgetScore = 80;
-  const costForGroup = place.cost.totalForGroup ?? (place.cost.amountPerPerson || 0) * (context.peopleCount || 1);
-  const limit = context.totalBudget ?? (context.perPersonBudget ? context.perPersonBudget * (context.peopleCount || 1) : undefined);
-
-  if (limit !== undefined && limit > 0) {
-    if (costForGroup === 0 || costForGroup <= limit * 0.4) {
-      budgetScore = 95; // perfectly affordable / comfortable
-    } else if (costForGroup <= limit * 0.7) {
-      budgetScore = 85; // easily fits in budget
-    } else if (costForGroup <= limit) {
-      budgetScore = 75; // fits within budget ceiling
-    } else if (costForGroup <= limit * 1.2) {
-      budgetScore = 35; // slightly above budget
-    } else {
-      budgetScore = 10; // clearly expensive / exceeds budget
-    }
-  } else {
-    budgetScore = 85;
-  }
+  // 4. Budget Compatibility (Neutral: unverified costs not scored)
+  const budgetScore = 100;
 
   // 5. Quality Signal (0 - 100)
   let qualityScore = 50;
@@ -232,6 +215,30 @@ export function scoreCandidate(
   const relScore = place.touristRelevanceScore ?? relevanceScore;
   if (relScore >= 88) {
     qualityAdjustment += 15; // Prominent heritage, palace, fort, major museum boost
+  }
+
+  // Crowd Preference adjustments
+  if (context.crowdPreference === 'low') {
+    const isCalmOrSpacious =
+      place.category === 'park' ||
+      (place.categories || []).some((c) =>
+        c.includes('garden') || c.includes('tomb') || c.includes('nature') || c.includes('museum')
+      ) ||
+      /\b(tombs|gardens?|park|museum|serene|tranquil)\b/i.test(place.name || '');
+    const isCrowdedCommercial =
+      place.category === 'shopping' ||
+      (place.categories || []).some((c) => c.includes('commercial') || c.includes('mall')) ||
+      /\b(bazaar|market|mall|commercial)\b/i.test(place.name || '');
+
+    if (isCalmOrSpacious) qualityAdjustment += 10;
+    if (isCrowdedCommercial) qualityAdjustment -= 15;
+  }
+
+  // Pace adjustments: relaxed pace favors unhurried, moderate-duration visits
+  if (context.pace === 'relaxed') {
+    if (place.estimatedVisitDurationMinutes >= 45 && place.estimatedVisitDurationMinutes <= 90) {
+      qualityAdjustment += 8;
+    }
   }
 
   // Composite Weighted Score Calculation

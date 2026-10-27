@@ -55,9 +55,11 @@ export async function runFullEvaluation() {
         : itinerary.summary.plannedArrivalTime <= scenario.constraints.time.latestArrivalTime;
 
     const budgetCompliant =
-      scenario.expectedOutcomes.maxPlannedCost !== undefined
-        ? itinerary.summary.totalCost <= scenario.expectedOutcomes.maxPlannedCost
-        : itinerary.summary.totalCost <= scenario.constraints.budget.total;
+      itinerary.summary.totalCost !== undefined && scenario.constraints.budget
+        ? (scenario.expectedOutcomes.maxPlannedCost !== undefined
+            ? itinerary.summary.totalCost <= scenario.expectedOutcomes.maxPlannedCost
+            : itinerary.summary.totalCost <= scenario.constraints.budget.total)
+        : true;
 
     const openingHoursCompliant = !validation.errors.some((e) => e.code === 'OPENING_HOURS_VIOLATED');
     const routeFeasible = optOutput.isFeasible && itinerary.summary.totalTravelTimeMinutes > 0;
@@ -132,7 +134,7 @@ export async function runFullEvaluation() {
       actualArrival: itinerary.summary.plannedArrivalTime,
       latestAllowedArrival: scenario.constraints.time.latestArrivalTime,
       deadlineCompliant,
-      totalCost: itinerary.summary.totalCost,
+      totalCost: itinerary.summary.totalCost ?? 0,
       budgetCompliant,
       openingHoursCompliant,
       routeFeasible,

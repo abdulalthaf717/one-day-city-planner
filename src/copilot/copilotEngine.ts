@@ -19,12 +19,14 @@ import { PlannerAgent } from '../agent/plannerAgent';
 import { AgentToolRegistry } from '../agent/tools/toolRegistry';
 import {
   CandidatePlace,
+  CrowdPreference,
   FinalItinerary,
   ItineraryStop,
   LocationPoint,
   PlannerState,
   TravelMode,
   TripConstraints,
+  TripPace,
 } from '../domain';
 import { detectConstraintChanges } from '../state/changeDetector';
 import {
@@ -35,12 +37,12 @@ import {
 } from './conversationalResponder';
 import { CopilotIntentParser } from './intentParser';
 import {
-  ChangeBudgetArgs,
   ChangeInterestsArgs,
   ChangeLocationArgs,
   ChangePeopleArgs,
   ChangeTimeArgs,
   ChangeTravelModeArgs,
+  CopilotActionType,
   CopilotDiff,
   CopilotEngineResult,
   CopilotHistoryItem,
@@ -52,6 +54,42 @@ import {
   ReorderPlaceArgs,
   ReplacePlaceArgs,
 } from './types';
+
+type ItineraryLike = FinalItinerary & {
+  totalCost?: number;
+  totalTravelMinutes?: number;
+  totalActivityMinutes?: number;
+  plannedArrivalTime?: string;
+  safetyBufferMinutes?: number;
+  unusedAvailableMinutes?: number;
+};
+
+/**
+ * Synchronizes structured user preferences directly into trip constraints
+ */
+export function syncPreferencesToConstraints(
+  constraints: TripConstraints,
+  preferences?: CopilotUserPreferences
+): TripConstraints {
+  if (!preferences) return constraints;
+  const updated: TripConstraints = { ...constraints };
+  if (preferences.pacePreference) {
+    updated.pace = preferences.pacePreference;
+  }
+  if (preferences.crowdPreference) {
+    updated.crowdPreference = preferences.crowdPreference;
+  }
+  if (preferences.preferredCategories && preferences.preferredCategories.length > 0) {
+    const combined = [...updated.interests];
+    for (const cat of preferences.preferredCategories) {
+      if (!combined.some((c) => c.toLowerCase() === cat.toLowerCase())) {
+        combined.push(cat);
+      }
+    }
+    updated.interests = combined;
+  }
+  return updated;
+}
 
 export interface CopilotProcessParams {
   message: string;
@@ -186,7 +224,10 @@ export class TripCopilotEngine {
         decision,
         context,
         preferences: updatedPreferences,
+        conversationHistory,
       });
+
+      const syncedConstraints = syncPreferencesToConstraints(constraints, updatedPreferences);
 
       return {
         success: true,
@@ -194,7 +235,7 @@ export class TripCopilotEngine {
         conversationMode: 'GENERAL_CONVERSATION',
         actionExecuted: decision.actionType,
         isSimulation: false,
-        updatedConstraints: constraints,
+        updatedConstraints: syncedConstraints,
         updatedItinerary: itinerary,
         updatedPlannerState: plannerState,
         updatedHistory: history,
@@ -231,6 +272,7 @@ export class TripCopilotEngine {
         itinerary,
         constraints,
         preferences: updatedPreferences,
+        conversationHistory,
       });
 
       return {
@@ -253,6 +295,32 @@ export class TripCopilotEngine {
 
     // 9. Handle Mode C: Suggestions & Preference-Aware Recommendations
     if (decision.actionType === 'SUGGEST_IMPROVEMENTS') {
+      if (decision.conversationalReply) {
+        let reply = decision.conversationalReply;
+        if (
+          !context.hasItinerary &&
+          !reply.includes('570') &&
+          !reply.includes('day window') &&
+          !reply.includes('daytime window') &&
+          !reply.includes('9h 30m')
+        ) {
+          reply = `For your **${context.planningWindowMinutes || 570}-minute day window** (${context.timeWindow.startTime} to ${context.timeWindow.latestArrivalTime}):\n\n${reply}`;
+        }
+
+        return {
+          success: true,
+          reply,
+          conversationMode: 'SIMULATION_AND_RECOMMENDATION',
+          updatedConstraints: constraints,
+          updatedItinerary: itinerary,
+          updatedPlannerState: plannerState,
+          updatedHistory: history,
+          updatedPreferences,
+          lastDiscussedPlace: decision.discussedPlace || lastDiscussedPlace,
+          pendingProposal: decision.pendingProposal || pendingProposal,
+          toolsCalled: [],
+        };
+      }
       const sugRes = this.handleSuggestions(
         context,
         constraints,
@@ -417,6 +485,118 @@ export class TripCopilotEngine {
     const args = decision.parameters;
 
     switch (actionType) {
+      case 'GENERATE_ITINERARY': {
+        const genArgs = args as unknown as {
+          explicitCity?: string;
+          explicitPace?: TripPace;
+          explicitCrowd?: CrowdPreference;
+          explicitInterests?: string[];
+        };
+
+        const newConstraints: TripConstraints = {
+          ...currentConstraints,
+        };
+
+        if (genArgs.explicitCity && typeof genArgs.explicitCity === 'string' && genArgs.explicitCity.trim()) {
+          newConstraints.city = genArgs.explicitCity.trim();
+        }
+        if (genArgs.explicitPace) {
+          newConstraints.pace = genArgs.explicitPace;
+        } else if (params.preferences?.pacePreference) {
+          newConstraints.pace = params.preferences.pacePreference;
+        }
+        if (genArgs.explicitCrowd) {
+          newConstraints.crowdPreference = genArgs.explicitCrowd;
+        } else if (params.preferences?.crowdPreference) {
+          newConstraints.crowdPreference = params.preferences.crowdPreference;
+        }
+
+        const explicitInterests = genArgs.explicitInterests || [];
+        const prefInterests = params.preferences?.preferredCategories || [];
+        const combined = [...newConstraints.interests];
+        for (const cat of [...explicitInterests, ...prefInterests]) {
+          if (!combined.some((c) => c.toLowerCase() === cat.toLowerCase())) {
+            combined.push(cat);
+          }
+        }
+        if (combined.length > 0) {
+          newConstraints.interests = combined;
+        }
+
+        // Validate required constraints before invoking planner
+        const missing: string[] = [];
+        if (!newConstraints.city || !newConstraints.city.trim()) missing.push('city');
+        if (!newConstraints.startingPoint?.name || !newConstraints.startingPoint.name.trim()) missing.push('starting point');
+        if (!newConstraints.endPoint?.name || !newConstraints.endPoint.name.trim()) missing.push('destination end point');
+        if (!newConstraints.time?.startTime) missing.push('start time');
+        if (!newConstraints.time?.latestArrivalTime) missing.push('latest arrival deadline');
+        if (!newConstraints.travelMode) missing.push('travel mode');
+        if (!newConstraints.numberOfPeople || newConstraints.numberOfPeople < 1) missing.push('number of travelers');
+
+        if (missing.length > 0) {
+          return {
+            success: false,
+            explanation: `Please provide your ${missing.join(', ')} in order to generate your itinerary.`,
+            newConstraints,
+            newItinerary: currentItinerary,
+            newPlannerState: currentPlannerState,
+            toolsCalled: ['validate_inputs'],
+          };
+        }
+
+        // Invoke existing PlannerAgent bounded planning loop
+        const planResult = await this.plannerAgent.planTrip(
+          newConstraints,
+          undefined,
+          `User requested itinerary generation for ${newConstraints.city}.`
+        );
+
+        const visitedStops = planResult.itinerary?.stops?.filter((s) => s.type !== 'start' && s.type !== 'end') || [];
+        const prevVisitedStops = currentItinerary?.stops?.filter((s) => s.type !== 'start' && s.type !== 'end') || [];
+
+        if (
+          !planResult.success ||
+          !planResult.itinerary ||
+          (visitedStops.length === 0 && prevVisitedStops.length > 0)
+        ) {
+          const detail =
+            visitedStops.length === 0 && prevVisitedStops.length > 0
+              ? 'No attractions could fit within your requested time limits and schedule.'
+              : (planResult.warnings.join(' ') || planResult.explanation || 'Could not find a feasible route matching all constraints.');
+          return {
+            success: false,
+            explanation: `I was unable to generate a valid itinerary: ${detail}. Your previous plan is unchanged.`,
+            newConstraints: currentConstraints,
+            newItinerary: currentItinerary,
+            newPlannerState: currentPlannerState,
+            infeasibleNotice: detail,
+            toolsCalled: ['plan_trip'],
+          };
+        }
+        const stopsList = visitedStops.map((s) => s.title).join(' → ');
+        const paceDesc = newConstraints.pace ? `${newConstraints.pace} pace` : 'balanced pace';
+        const arrival = planResult.itinerary.summary.plannedArrivalTime;
+        const buffer = planResult.itinerary.summary.safetyBufferMinutes;
+
+        const explanation = `I've generated your custom itinerary for **${newConstraints.city}** with **${visitedStops.length} stops** (${stopsList}), tailored to your ${paceDesc} and interests. The route departs **${newConstraints.startingPoint.name}** at **${newConstraints.time.startTime}** and reaches **${newConstraints.endPoint.name}** by **${arrival}** with a **${buffer}m** safety buffer. You can review the full schedule on the timeline and interactive route on the map!`;
+
+        return {
+          success: true,
+          explanation,
+          newConstraints,
+          newItinerary: planResult.itinerary,
+          newPlannerState: planResult.plannerState,
+          toolsCalled: [
+            'plan_trip',
+            'resolve_locations',
+            'discover_candidates',
+            'calculate_route_matrix',
+            'optimize_itinerary',
+            'validate_itinerary',
+          ],
+        };
+      }
+
       case 'ADD_PLACE': {
         const placeName = String(args.placeName || '').trim();
         if (!placeName) {
@@ -504,7 +684,7 @@ export class TripCopilotEngine {
         if (!planResult.success || !planResult.itinerary) {
           return {
             success: false,
-            explanation: `Adding "${resolved.name}" is not feasible under your current time and budget constraints.`,
+            explanation: `Adding "${resolved.name}" is not feasible under your current schedule and time limits.`,
             newConstraints: currentConstraints,
             newItinerary: currentItinerary,
             newPlannerState: currentPlannerState,
@@ -523,10 +703,9 @@ export class TripCopilotEngine {
 
         if (!stopIncluded) {
           const deadline = currentConstraints.time.latestArrivalTime;
-          const budget = currentConstraints.budget.total;
           return {
             success: false,
-            explanation: `I couldn't add "${resolved.name}" because the travel detour and visit time would breach your ${deadline} arrival deadline (or ₹${budget} budget). Your current plan is unchanged. Would you like me to replace an existing stop with "${resolved.name}" instead?`,
+            explanation: `I couldn't add "${resolved.name}" because the travel detour and visit time would breach your ${deadline} arrival deadline. Your current plan is unchanged. Would you like me to replace an existing stop with "${resolved.name}" instead?`,
             newConstraints: currentConstraints,
             newItinerary: currentItinerary,
             newPlannerState: currentPlannerState,
@@ -542,7 +721,7 @@ export class TripCopilotEngine {
 
         return {
           success: true,
-          explanation: `I've added **${resolved.name}** to your itinerary and re-optimized your route (${newStopsList}). You now arrive at **${currentConstraints.endPoint.name}** at **${planResult.itinerary.summary.plannedArrivalTime}** with a **${planResult.itinerary.summary.safetyBufferMinutes}m** safety buffer, and total spend is **${currentConstraints.budget.currency}${planResult.itinerary.summary.totalCost}**.`,
+          explanation: `I've added **${resolved.name}** to your itinerary and re-optimized your route (${newStopsList}). You now arrive at **${currentConstraints.endPoint.name}** at **${planResult.itinerary.summary.plannedArrivalTime}** with a **${planResult.itinerary.summary.safetyBufferMinutes}m** safety buffer.`,
           newConstraints: currentConstraints,
           newItinerary: planResult.itinerary,
           newPlannerState: planResult.plannerState,
@@ -622,7 +801,7 @@ export class TripCopilotEngine {
 
         return {
           success: true,
-          explanation: `I've removed **${targetStop.title}** from your itinerary and re-optimized your route. You now have **${planResult.itinerary?.summary.placeCount || keptCandidates.length} stops**, arriving at **${planResult.itinerary?.summary.plannedArrivalTime}** with **${planResult.itinerary?.summary.unusedAvailableMinutes || 0}m** of unused free time and total cost reduced to **${currentConstraints.budget.currency}${planResult.itinerary?.summary.totalCost ?? 0}**.`,
+          explanation: `I've removed **${targetStop.title}** from your itinerary and re-optimized your route. You now have **${planResult.itinerary?.summary.placeCount || keptCandidates.length} stops**, arriving at **${planResult.itinerary?.summary.plannedArrivalTime}** with **${planResult.itinerary?.summary.unusedAvailableMinutes || 0}m** of unused free time.`,
           newConstraints: currentConstraints,
           newItinerary: planResult.itinerary,
           newPlannerState: planResult.plannerState,
@@ -780,10 +959,12 @@ export class TripCopilotEngine {
           }
         }
 
+        const syncedConstraints = syncPreferencesToConstraints(currentConstraints, params.preferences);
+
         return {
           success: true,
           explanation: `I've updated your travel preferences and will use them to guide your itinerary recommendations.`,
-          newConstraints: currentConstraints,
+          newConstraints: syncedConstraints,
           newItinerary: currentItinerary,
           newPlannerState: currentPlannerState,
           toolsCalled: ['update_preferences'],
@@ -920,73 +1101,14 @@ export class TripCopilotEngine {
         };
       }
 
-      case 'CHANGE_BUDGET': {
-        const budgetArgs = args as unknown as ChangeBudgetArgs & { trimExpensiveStop?: boolean };
-        const newBudget = budgetArgs.total;
-
-        if (typeof newBudget !== 'number' || newBudget <= 0) {
-          return {
-            success: false,
-            explanation: 'Please provide a valid budget amount greater than 0.',
-            newConstraints: currentConstraints,
-            newItinerary: currentItinerary,
-            newPlannerState: currentPlannerState,
-            toolsCalled: ['change_budget'],
-          };
-        }
-
-        const newConstraints: TripConstraints = {
-          ...currentConstraints,
-          budget: {
-            ...currentConstraints.budget,
-            total: newBudget,
-          },
-        };
-
-        let updatedState = currentPlannerState;
-        if (currentItinerary) {
-          let candidates = this.extractCandidatesFromItinerary(
-            currentItinerary,
-            currentConstraints.city
-          );
-          // If the user explicitly asked to "make the trip cheaper" or if current spend exceeds newBudget, drop the highest-cost stop
-          const currentSpend = currentItinerary.summary.totalCost || 0;
-          if (budgetArgs.trimExpensiveStop || currentSpend > newBudget) {
-            const paidCandidates = [...candidates].sort(
-              (a, b) => (b.cost.amountPerPerson || 0) - (a.cost.amountPerPerson || 0)
-            );
-            if (paidCandidates.length > 1 && (paidCandidates[0].cost.amountPerPerson || 0) > 0) {
-              const dropped = paidCandidates[0];
-              candidates = candidates.filter((c) => c.id !== dropped.id);
-            }
-          }
-          updatedState = {
-            ...(currentPlannerState || {
-              tripConstraints: newConstraints,
-              planningVersion: 1,
-              warnings: [],
-            }),
-            candidates,
-            routeMatrix: undefined,
-            currentItinerary: undefined,
-            validationResult: undefined,
-            planningVersion: (currentPlannerState?.planningVersion || 1) + 1,
-          };
-        }
-
-        const planResult = await this.plannerAgent.planTrip(
-          newConstraints,
-          updatedState,
-          `Budget updated to ${newConstraints.budget.currency}${newBudget}.`
-        );
-
+      case ('CHANGE_BUDGET' as unknown as CopilotActionType): {
         return {
-          success: true,
-          explanation: `Updated your budget cap to **${newConstraints.budget.currency}${newBudget}** and re-optimized your stops for cost efficiency. Total itinerary spend is now **${newConstraints.budget.currency}${planResult.itinerary?.summary.totalCost}** across **${planResult.itinerary?.summary.placeCount}** stops.`,
-          newConstraints,
-          newItinerary: planResult.itinerary,
-          newPlannerState: planResult.plannerState,
-          toolsCalled: ['change_budget', 'replan_trip', 'validate_trip'],
+          success: false,
+          explanation: 'The One-Day City Planner does not calculate or enforce trip budgets or admission fees because live attraction pricing cannot be reliably verified.',
+          newConstraints: currentConstraints,
+          newItinerary: currentItinerary,
+          newPlannerState: currentPlannerState,
+          toolsCalled: [],
         };
       }
 
@@ -1094,7 +1216,7 @@ export class TripCopilotEngine {
 
         return {
           success: true,
-          explanation: `Updated traveler count to **${count}**. Total group cost has been recalculated to **${newConstraints.budget.currency}${planResult.itinerary?.summary.totalCost}**.`,
+          explanation: `Updated traveler count to **${count}**. Schedule and timing have been updated.`,
           newConstraints,
           newItinerary: planResult.itinerary,
           newPlannerState: planResult.plannerState,
@@ -1441,40 +1563,63 @@ export class TripCopilotEngine {
       if (prefersHistory && prefersLowCrowd) {
         const recLandmark = 'Qutb Shahi Tombs';
         lastDiscussedPlace = recLandmark;
-        pendingProposal = {
-          actionType: 'ADD_PLACE',
-          parameters: { placeName: recLandmark, forceInclude: true },
-          description: `Add "${recLandmark}" to the itinerary`,
-        };
-        const timeDesc = hasItin
-          ? `for your **${context.unusedAvailableMinutes} minutes of unallocated time**`
-          : `for your **${context.planningWindowMinutes}-minute day window** (${context.timeWindow.startTime}–${context.timeWindow.latestArrivalTime})`;
-        suggestions.push(
-          `🏛️ **Top Match for Your Preferences (${recLandmark})**: Since you prefer **historical places** and **dislike crowded areas**, I strongly recommend ${hasItin ? 'adding' : 'including'} the **${recLandmark}** (~75m visit, ₹40/person) ${timeDesc}. Unlike the bustling bazaars around Charminar, the ${recLandmark} offer 16th-century royal Deccani mausoleums set in quiet, landscaped gardens.${preferences?.pacePreference === 'relaxed' ? ' It pairs naturally with a relaxed, unhurried pace.' : ''}`
-        );
+        pendingProposal = !hasItin
+          ? {
+              actionType: 'GENERATE_ITINERARY',
+              parameters: {},
+              description: `Generate a verified itinerary including "${recLandmark}"`,
+            }
+          : {
+              actionType: 'ADD_PLACE',
+              parameters: { placeName: recLandmark, forceInclude: true },
+              description: `Add "${recLandmark}" to the itinerary`,
+            };
+        if (!hasItin) {
+          suggestions.push(
+            `🏛️ **Top Match: Qutb Shahi Tombs** (~75m visit): 16th-century royal Deccani mausoleums set in open landscaped gardens. It generally offers a much calmer atmosphere than central bazaars, making it the strongest fit for a relaxed historical visit (though crowd levels naturally fluctuate by time of day).`,
+            `🏰 **Alternative: Golconda Fort** (~120m visit): The monumental Qutb Shahi citadel (on the UNESCO World Heritage Tentative List) with dramatic acoustic architecture and panoramic views, though it involves substantial uphill walking and generally higher visitor crowds.`,
+            `🏛️ **Alternative: Salar Jung Museum** (~90m visit): One of India's National Museums with extraordinary art collections across 40+ indoor galleries, though it is located in the busier Old City corridor along the Musi River.`
+          );
+        } else {
+          suggestions.push(
+            `🏛️ **Top Match for Your Preferences (${recLandmark})**: Since you prefer **historical places** and **dislike crowded areas**, I strongly recommend adding the **${recLandmark}** (~75m visit) for your **${context.unusedAvailableMinutes} minutes of unallocated time**. Unlike the bustling bazaars around Charminar, the ${recLandmark} offer 16th-century royal Deccani mausoleums set in quiet, landscaped gardens (crowd levels vary naturally by time of day).${preferences?.pacePreference === 'relaxed' ? ' It pairs naturally with a relaxed, unhurried pace.' : ''}`
+          );
+        }
         suggestedActions.push(`Add ${recLandmark}`);
       } else if (prefersHistory) {
         const recLandmark = 'Golconda Fort';
         lastDiscussedPlace = recLandmark;
-        pendingProposal = {
-          actionType: 'ADD_PLACE',
-          parameters: { placeName: recLandmark, forceInclude: true },
-          description: `Add "${recLandmark}" to the itinerary`,
-        };
+        pendingProposal = !hasItin
+          ? {
+              actionType: 'GENERATE_ITINERARY',
+              parameters: {},
+              description: `Generate a verified itinerary including "${recLandmark}"`,
+            }
+          : {
+              actionType: 'ADD_PLACE',
+              parameters: { placeName: recLandmark, forceInclude: true },
+              description: `Add "${recLandmark}" to the itinerary`,
+            };
         const timeDesc = hasItin
           ? `With **${context.unusedAvailableMinutes} minutes of unallocated time**`
           : `For your **${context.planningWindowMinutes}-minute day window** (${context.timeWindow.startTime}–${context.timeWindow.latestArrivalTime})`;
         suggestions.push(
-          `🏰 **Historical Highlight (${recLandmark})**: ${timeDesc}, you can comfortably ${hasItin ? 'add' : 'include'} **${recLandmark}** (~90m visit, ₹25/person) to experience Hyderabad's signature Qutb Shahi citadel.`
+          `🏰 **Historical Highlight (${recLandmark})**: ${timeDesc}, you can comfortably ${hasItin ? 'add' : 'include'} **${recLandmark}** (~90m visit) to experience Hyderabad's signature Qutb Shahi citadel (on the UNESCO World Heritage Tentative List).`
         );
         suggestedActions.push(`Add ${recLandmark}`);
       } else {
         lastDiscussedPlace = 'Golconda Fort';
-        pendingProposal = {
-          actionType: 'ADD_PLACE',
-          parameters: { placeName: 'Golconda Fort', forceInclude: true },
-          description: 'Add "Golconda Fort" to the itinerary',
-        };
+        pendingProposal = !hasItin
+          ? {
+              actionType: 'GENERATE_ITINERARY',
+              parameters: {},
+              description: 'Generate a verified itinerary based on these recommendations',
+            }
+          : {
+              actionType: 'ADD_PLACE',
+              parameters: { placeName: 'Golconda Fort', forceInclude: true },
+              description: 'Add "Golconda Fort" to the itinerary',
+            };
         const timeDesc = hasItin
           ? `You have **${context.unusedAvailableMinutes} minutes of unallocated time** before your ${context.deadlineArrivalTime} deadline.`
           : `For your **${context.planningWindowMinutes}-minute day window** in **${context.city}** (${context.timeWindow.startTime}–${context.timeWindow.latestArrivalTime}),`;
@@ -1485,19 +1630,7 @@ export class TripCopilotEngine {
       }
     }
 
-    // 2. Budget suggestions (supplementary only)
-    if (hasItin && context.budget.remaining >= context.budget.total * 0.5 && context.budget.total > 1500) {
-      suggestions.push(
-        `💰 **Budget Flexibility**: You have **${context.budget.currency}${context.budget.remaining}** remaining out of your ${context.budget.currency}${context.budget.total} budget, giving you plenty of room for another ticketed heritage attraction or a relaxed sit-down meal.`
-      );
-    } else if (context.budget.remaining < 200) {
-      suggestions.push(
-        `⚠️ **Tight Budget Margin**: Your remaining budget is ${context.budget.currency}${context.budget.remaining}. I can swap a paid stop for a free landmark if you'd like more cushion.`
-      );
-      suggestedActions.push('Make it cheaper');
-    }
-
-    // 3. Category diversity / Museum balance
+    // 2. Category diversity / Museum balance
     const categories = context.currentStops.map((s) => s.category || s.title.toLowerCase());
     const museumCount = categories.filter((c) => c.includes('museum')).length;
     if (museumCount >= 2) {
@@ -1519,7 +1652,7 @@ export class TripCopilotEngine {
       if (hasItin) {
         reply = `Here are my tailored suggestions to enhance your ${context.city} day:\n\n${suggestions.join('\n\n')}\n\nWould you like me to apply any of these changes?`;
       } else {
-        reply = `Here are my tailored suggestions for your ${context.city} day trip:\n\n${suggestions.join('\n\n')}\n\nWould you like me to include ${lastDiscussedPlace || 'these sights'} when we generate your plan?`;
+        reply = `Here are my tailored preliminary suggestions for your ${context.city} day trip (${context.planningWindowMinutes}-minute window):\n\n${suggestions.join('\n\n')}\n\nPlease note: Because no itinerary has been generated yet, these are preliminary recommendations. Route feasibility, exact transit times, and opening hours will be verified by the route optimizer once we generate your plan.\n\nWould you like me to include ${lastDiscussedPlace || 'these sights'} when we generate your plan?`;
       }
     } else {
       reply = hasItin
@@ -1538,7 +1671,7 @@ export class TripCopilotEngine {
       pendingProposal,
       lastDiscussedPlace,
       suggestedActions:
-        suggestedActions.length > 0 ? suggestedActions : ['Add a place', 'Make it cheaper'],
+        suggestedActions.length > 0 ? suggestedActions : ['Add a place', 'Make it less tiring'],
     };
   }
 
@@ -1564,45 +1697,46 @@ export class TripCopilotEngine {
     const addedStops = newTitles.filter((t) => !oldTitles.includes(t));
     const removedStops = oldTitles.filter((t) => !newTitles.includes(t));
 
-    const costChange =
-      oldItinerary &&
-      newItinerary &&
-      oldItinerary.summary.totalCost !== newItinerary.summary.totalCost
-        ? {
-            from: oldItinerary.summary.totalCost,
-            to: newItinerary.summary.totalCost,
-            currency: newItinerary.summary.currency,
-          }
-        : undefined;
+    const oldLike = oldItinerary as ItineraryLike | undefined;
+    const newLike = newItinerary as ItineraryLike | undefined;
 
+    const oldArr = oldLike?.summary?.plannedArrivalTime ?? oldLike?.plannedArrivalTime;
+    const newArr = newLike?.summary?.plannedArrivalTime ?? newLike?.plannedArrivalTime;
     const arrivalTimeChange =
       oldItinerary &&
       newItinerary &&
-      oldItinerary.summary.plannedArrivalTime !== newItinerary.summary.plannedArrivalTime
+      oldArr !== undefined &&
+      newArr !== undefined &&
+      oldArr !== newArr
         ? {
-            from: oldItinerary.summary.plannedArrivalTime,
-            to: newItinerary.summary.plannedArrivalTime,
+            from: oldArr,
+            to: newArr,
           }
         : undefined;
 
+    const oldBuf = oldLike?.summary?.safetyBufferMinutes ?? oldLike?.safetyBufferMinutes;
+    const newBuf = newLike?.summary?.safetyBufferMinutes ?? newLike?.safetyBufferMinutes;
     const safetyBufferChange =
       oldItinerary &&
       newItinerary &&
-      oldItinerary.summary.safetyBufferMinutes !== newItinerary.summary.safetyBufferMinutes
+      oldBuf !== undefined &&
+      newBuf !== undefined &&
+      oldBuf !== newBuf
         ? {
-            from: oldItinerary.summary.safetyBufferMinutes,
-            to: newItinerary.summary.safetyBufferMinutes,
+            from: oldBuf,
+            to: newBuf,
           }
         : undefined;
 
+    const oldUnused = oldLike?.summary?.unusedAvailableMinutes ?? oldLike?.unusedAvailableMinutes ?? 0;
+    const newUnused = newLike?.summary?.unusedAvailableMinutes ?? newLike?.unusedAvailableMinutes ?? 0;
     const unusedTimeChange =
       oldItinerary &&
       newItinerary &&
-      (oldItinerary.summary.unusedAvailableMinutes || 0) !==
-        (newItinerary.summary.unusedAvailableMinutes || 0)
+      oldUnused !== newUnused
         ? {
-            from: oldItinerary.summary.unusedAvailableMinutes || 0,
-            to: newItinerary.summary.unusedAvailableMinutes || 0,
+            from: oldUnused,
+            to: newUnused,
           }
         : undefined;
 
@@ -1611,7 +1745,6 @@ export class TripCopilotEngine {
     return {
       addedStops,
       removedStops,
-      costChange,
       arrivalTimeChange,
       safetyBufferChange,
       unusedTimeChange,
@@ -1640,18 +1773,14 @@ export class TripCopilotEngine {
         arrivalTime: s.arrivalTime,
         departureTime: s.departureTime,
         durationMinutes: s.durationMinutes,
-        costTotal: s.cost?.total || 0,
         category: s.place?.category,
-        isFree: (s.cost?.perPerson || 0) === 0,
       }));
 
-    const spent = itinerary?.summary.totalCost || 0;
-    const remaining = Math.max(0, constraints.budget.total - spent);
+    const itinLike = itinerary as ItineraryLike | undefined;
 
     const candidateSample = (plannerState?.candidates || []).slice(0, 5).map((c) => ({
       name: c.name,
       category: c.category,
-      estimatedCost: c.cost.amountPerPerson || 0,
     }));
 
     const hasItinerary = Boolean(itinerary && itinerary.stops && itinerary.stops.length > 0);
@@ -1677,22 +1806,16 @@ export class TripCopilotEngine {
         startTime: constraints.time.startTime,
         latestArrivalTime: constraints.time.latestArrivalTime,
       },
-      budget: {
-        total: constraints.budget.total,
-        currency: constraints.budget.currency,
-        spent,
-        remaining,
-      },
       travelMode: constraints.travelMode,
       numberOfPeople: constraints.numberOfPeople,
       interests: constraints.interests,
       currentStops: visitedStops,
-      totalTravelMinutes: itinerary?.summary.totalTravelTimeMinutes || 0,
-      totalActivityMinutes: itinerary?.summary.totalActivityTimeMinutes || 0,
-      safetyBufferMinutes: itinerary?.summary.safetyBufferMinutes || 0,
-      unusedAvailableMinutes: itinerary?.summary.unusedAvailableMinutes || 0,
+      totalTravelMinutes: itinLike?.summary?.totalTravelTimeMinutes ?? itinLike?.totalTravelMinutes ?? 0,
+      totalActivityMinutes: itinLike?.summary?.totalActivityTimeMinutes ?? itinLike?.totalActivityMinutes ?? 0,
+      safetyBufferMinutes: itinLike?.summary?.safetyBufferMinutes ?? itinLike?.safetyBufferMinutes ?? 0,
+      unusedAvailableMinutes: itinLike?.summary?.unusedAvailableMinutes ?? itinLike?.unusedAvailableMinutes ?? 0,
       plannedArrivalTime:
-        itinerary?.summary.plannedArrivalTime || constraints.time.latestArrivalTime,
+        itinLike?.summary?.plannedArrivalTime ?? itinLike?.plannedArrivalTime ?? constraints.time.latestArrivalTime,
       deadlineArrivalTime: constraints.time.latestArrivalTime,
       availableCandidateSample: candidateSample,
       canUndo: history.length > 0,
@@ -1710,6 +1833,8 @@ export class TripCopilotEngine {
   private formatActionBrief(decision: CopilotToolDecision): string {
     const p = decision.parameters;
     switch (decision.actionType) {
+      case 'GENERATE_ITINERARY':
+        return `Generate custom itinerary for ${p.explicitCity || 'your trip'}`;
       case 'ADD_PLACE':
         return `Add "${p.placeName}"`;
       case 'REMOVE_PLACE':
@@ -1722,8 +1847,8 @@ export class TripCopilotEngine {
         return `Make the schedule less tiring`;
       case 'UPDATE_PREFERENCES':
         return `Adjust itinerary for updated user preferences`;
-      case 'CHANGE_BUDGET':
-        return `Change budget to ₹${p.total}`;
+      case ('CHANGE_BUDGET' as unknown as CopilotActionType):
+        return 'Trip budget changes are not supported';
       case 'CHANGE_TRAVEL_MODE':
         return `Switch travel mode to ${p.travelMode}`;
       case 'CHANGE_START_TIME':

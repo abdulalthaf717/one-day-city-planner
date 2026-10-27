@@ -10,10 +10,10 @@ Built as an individual 6-week capstone project for the **Agentic AI and LLM Cour
 
 Standard LLM travel planning tools suffer from three fundamental flaws:
 1. **Hallucinated geography**: Generating straight-line estimates or fictional distances that ignore one-way streets, traffic flow, and directional road geometry ($A \rightarrow B \neq B \rightarrow A$).
-2. **Computational hallucination**: Delegating arithmetic, opening hours, schedule fitting, and budget constraints to an LLM, leading to plans that arrive late or exceed budgets.
-3. **Rigid re-prompting**: When a user changes a constraint (e.g. changing travel mode from car to walking, or slashing budget in half), basic chatbots rewrite text arbitrarily without mathematically recalculating transit feasibility.
+2. **Computational hallucination**: Delegating arithmetic, opening hours, and schedule fitting to an LLM, leading to plans that arrive late or violate opening times.
+3. **Rigid re-prompting**: When a user changes a constraint (e.g. changing travel mode from car to walking, or shifting departure times), basic chatbots rewrite text arbitrarily without mathematically recalculating transit feasibility.
 
-**One-Day City Planner** solves this by strictly separating **agentic reasoning** (intent interpretation, semantic preference matching, trade-off reasoning, user interaction) from **deterministic computation** (directional road routing, time-window optimization, budget accounting, and hard constraint validation).
+**One-Day City Planner** solves this by strictly separating **agentic reasoning** (intent interpretation, semantic preference matching, trade-off reasoning, user interaction) from **deterministic computation** (directional road routing, time-window optimization, and hard constraint validation).
 
 ---
 
@@ -21,7 +21,7 @@ Standard LLM travel planning tools suffer from three fundamental flaws:
 
 ```mermaid
 flowchart TD
-    Start["User Inputs Trip Constraints\n(City, Start, End, Times, Budget, Mode, Pax, Interests)"]
+    Start["User Inputs Trip Constraints\n(City, Start, End, Times, Mode, Pax, Interests)"]
     Start --> Planner["Planner Agent"]
     
     subgraph Agentic Stage
@@ -32,16 +32,16 @@ flowchart TD
     subgraph Deterministic Engine
         PlacesAPI --> MatrixAPI["Geoapify Route Matrix API:\nDirectional N×N Distance & Time Grid"]
         MatrixAPI --> Optimizer["Deterministic Optimizer:\nTime-Window TSP-Heuristic & Buffer Allocation"]
-        Optimizer --> Validator["Deterministic Validator:\nDeadline, Budget, Opening Hours, Feasibility"]
+        Optimizer --> Validator["Deterministic Validator:\nDeadline, Opening Hours, Route Feasibility"]
     end
     
-    Validator -->|Violation: e.g. Budget Exceeded / Late Arrival| Replanner["Agentic Replanning Loop:\nPrune Candidates / Adjust Buffers"]
+    Validator -->|Violation: e.g. Late Arrival / Closed Venue| Replanner["Agentic Replanning Loop:\nPrune Candidates / Adjust Buffers"]
     Replanner --> Optimizer
     
     Validator -->|Validated Feasible| ItineraryOutput["Structured Chronological Itinerary\n(Timeline, Action Links, Summaries, Map)"]
     
     subgraph Constraint Modification & Dynamic Replanning
-        UserMod["User Modifies ANY Constraint\n(e.g., Mode: Drive → Walk, Budget: ₹2500 → ₹1500)"]
+        UserMod["User Modifies ANY Constraint\n(e.g., Mode: Drive → Walk, Deadline: 18:00 → 15:00)"]
         UserMod --> ChangeDetect["Change Detector:\nIdentifies Affected Calculations"]
         ChangeDetect --> Planner
     end
@@ -130,7 +130,7 @@ src/
 ## 5. Core Subsystems
 
 ### A. Deterministic Optimizer
-- **Hard Constraints**: Start point, end point (deadline arrival), budget, travel mode, pax size.
+- **Hard Constraints**: Start point, end point (deadline arrival), travel mode, pax size.
 - **Directional Non-Symmetric Matrix**: Evaluates $A \rightarrow B$ independently from $B \rightarrow A$.
 - **Objectives**:
   - Minimize transit travel time.
@@ -142,7 +142,6 @@ src/
 Validates proposed itineraries without LLM interference. Returns structured diagnostics:
 - `VALID`
 - `INVALID` with exact reasons:
-  - `BUDGET_EXCEEDED` (with exact excess amount in currency)
   - `END_TIME_VIOLATED` (with exact minutes late against user deadline)
   - `INSUFFICIENT_VISIT_DURATION`
   - `INSUFFICIENT_BUFFER`
@@ -153,7 +152,7 @@ When the user edits any input (e.g. changes `travelMode` from `drive` to `walk`)
 1. `detectConstraintChanges()` computes a typed diff.
 2. Identifies affected components:
    - Travel mode change $\rightarrow$ Recalculate route matrix and transit times.
-   - Budget change $\rightarrow$ Re-evaluate candidate costs and filter set.
+   - Time window change $\rightarrow$ Re-evaluate schedule feasibility and stop selection.
    - End point change $\rightarrow$ Recalculate final leg and deadline slack.
 3. Triggers targeted recalculation while preserving unchanged preferences.
 
@@ -258,16 +257,15 @@ The candidate discovery layer retrieves real places from **Geoapify Places API v
 
 ### D. Transparent Scoring Formula
 ```
-candidateScore = (0.30 × interestRelevance) + (0.25 × geographicPracticality)
-               + (0.10 × openingCompatibility) + (0.10 × budgetCompatibility)
-               + (0.10 × qualitySignal) + (0.10 × diversityBonus)
+candidateScore = (0.35 × interestRelevance) + (0.30 × geographicPracticality)
+               + (0.10 × openingCompatibility) + (0.15 × qualitySignal) + (0.10 × diversityBonus)
                - (0.15 × travelBurdenPenalty) - timeFeasibilityPenalty
 ```
 - Attached inspectable `scoreBreakdown` object explains the exact score decomposition for every candidate.
 
 ### E. Confidence Models (Zero Fabrication Guarantee)
 - **Duration Model**: Provider duration $\rightarrow$ category default (`museum`: 90m, `historic`: 75m, `restaurant`: 60m, `park`: 45m). Attributed with `visitDurationSource: "category_default" | "provider"`.
-- **Cost Model**: Free public places evaluated as `free` (₹0); dining estimated at ₹450/person (`costSource: "estimated"`); ticketed attractions without published fee marked `costSource: "unknown"`. Ticket prices are **never invented**.
+- **Pricing & Fees**: Admission fees and activity prices are not tracked or calculated, as live pricing cannot be reliably verified. Honest disclaimers direct users to official venue counters.
 - **Booking URLs**: Set strictly to `undefined` unless verified provider URL exists.
 
 ### F. API Quota Safety & Caching
@@ -544,7 +542,7 @@ From real-world execution of `npm run test:evaluation` across 20 diverse scenari
 | :--- | :---: | :---: | :---: |
 | **Constraint Satisfaction Rate** | **100.0%** (20 / 20) | $\ge 90\%$ | **EXCEEDED** |
 | **Deadline Compliance Rate** | **100.0%** (20 / 20) | $100\%$ | **MET** |
-| **Budget Compliance Rate** | **100.0%** (20 / 20) | $100\%$ | **MET** |
+| **Schedule Feasibility Rate** | **100.0%** (20 / 20) | $100\%$ | **MET** |
 | **Opening-Hours Compliance Rate** | **100.0%** (20 / 20) | $100\%$ | **MET** |
 | **Route Feasibility Rate** | **100.0%** (20 / 20) | $\ge 95\%$ | **EXCEEDED** |
 | **Dynamic Replanning Success Rate** | **100.0%** | $\ge 90\%$ | **EXCEEDED** |

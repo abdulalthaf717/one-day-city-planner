@@ -125,7 +125,6 @@ export const RouteMap: React.FC<RouteMapProps> = ({
             <h4 style="margin: 0 0 6px; font-size: 14px; font-weight: bold; color: #0f172a; line-height: 1.3;">${stop.title}</h4>
             <div style="font-size: 12px; color: #475569; line-height: 1.4;">
               <div>⏰ ${stop.arrivalTime} – ${stop.departureTime} (${stop.durationMinutes} min)</div>
-              <div>💰 ${stop.cost.total > 0 ? `₹${stop.cost.total}` : 'Free Admission'}</div>
             </div>
           </div>
         `;

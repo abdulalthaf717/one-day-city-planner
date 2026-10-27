@@ -17,7 +17,7 @@
     "foodStopRatio": 13.6,
     "religiousLocalStopRatio": 0,
     "genericLocalPlaceRatio": 0,
-    "averageOptimizerLatencyMs": 0.2,
+    "averageOptimizerLatencyMs": 0.1,
     "averagePlannerLatencyMs": 310.5,
     "averageApiCallsPerPlan": 2.1
   },
@@ -41,7 +41,7 @@
         "Charminar",
         "Lumbini Park & Laser Show"
       ],
-      "latencyMs": 1.5,
+      "latencyMs": 0.8,
       "validationResult": {
         "isValid": true,
         "errors": []
@@ -118,7 +118,7 @@
         "Lumbini Park & Laser Show",
         "Hussain Sagar & Tank Bund"
       ],
-      "latencyMs": 0,
+      "latencyMs": 0.2,
       "validationResult": {
         "isValid": true,
         "errors": []
@@ -196,7 +196,7 @@
         "Lumbini Park & Laser Show",
         "Hussain Sagar & Tank Bund"
       ],
-      "latencyMs": 0.2,
+      "latencyMs": 0.1,
       "validationResult": {
         "isValid": true,
         "errors": []
@@ -221,7 +221,7 @@
         "Lumbini Park & Laser Show",
         "Charminar"
       ],
-      "latencyMs": 0.1,
+      "latencyMs": 0,
       "validationResult": {
         "isValid": true,
         "errors": []
@@ -376,7 +376,7 @@
         "Paradise Biryani",
         "Lumbini Park & Laser Show"
       ],
-      "latencyMs": 0.4,
+      "latencyMs": 0.3,
       "validationResult": {
         "isValid": true,
         "errors": []

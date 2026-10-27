@@ -42,7 +42,7 @@ export interface ItineraryStop {
   openingStatus?: OpeningStatus;
   costConfidence?: 'known' | 'estimated' | 'uncertain' | 'unknown' | 'free';
   durationConfidence?: 'provider' | 'category_default' | 'estimated';
-  cost: {
+  cost?: {
     perPerson: number;
     total: number;
     isEstimate: boolean;
@@ -59,8 +59,8 @@ export interface ItineraryStop {
 }
 
 export interface ItinerarySummary {
-  totalCost: number;
-  currency: string;
+  totalCost?: number;
+  currency?: string;
   totalTravelTimeMinutes: number;
   totalActivityTimeMinutes: number;
   safetyBufferMinutes: number; // Intentional uncertainty reserve

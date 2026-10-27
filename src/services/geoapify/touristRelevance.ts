@@ -15,7 +15,7 @@
  *   Curated restaurants, cafes, generic shopping centers, transit/support infrastructure.
  */
 
-import { TouristPlaceType } from '@/domain';
+import type { TouristPlaceType } from '@/domain';
 
 export interface TouristRelevanceClassification {
   placeType: TouristPlaceType;
@@ -27,11 +27,11 @@ export interface TouristRelevanceClassification {
   reason: string;
 }
 
-const RELIGIOUS_INTEREST_REGEX = /\b(relig|spirit|temple|church|mosque|masjid|worship|faith|shrine|pilgrim)\b/i;
-const FOOD_INTEREST_REGEX = /\b(food|dining|lunch|dinner|restaurant|cafe|culinary|bakery)\b/i;
-const NATURE_INTEREST_REGEX = /\b(nature|park|garden|outdoor|botanic|lake|scenic|wildlife|forest|reserve)\b/i;
-const HISTORY_INTEREST_REGEX = /\b(history|historic|heritage|monument|ancient|archaeol|fort|palace|museum)\b/i;
-const ARCHITECTURE_INTEREST_REGEX = /\b(architect|building|design|structure|monument)\b/i;
+const RELIGIOUS_INTEREST_REGEX = /\b(religion|religious|spiritual|spirit|temple|church|mosque|masjid|worship|faith|shrine|pilgrim)/i;
+const FOOD_INTEREST_REGEX = /\b(food|dining|lunch|dinner|restaurant|cafe|culinary|bakery)/i;
+const NATURE_INTEREST_REGEX = /\b(nature|natural|park|garden|outdoor|botanic|botanical|lake|scenic|wildlife|forest|reserve)/i;
+const HISTORY_INTEREST_REGEX = /\b(history|historic|historical|heritage|monument|ancient|archaeology|archaeological|fort|palace|museum)/i;
+const ARCHITECTURE_INTEREST_REGEX = /\b(architect|architecture|architectural|building|design|structure|monument)/i;
 
 export function hasReligiousInterest(interests?: string[]): boolean {
   if (!interests || interests.length === 0) return false;
@@ -124,11 +124,29 @@ export function classifyTouristRelevance(
 
   const isOrdinaryStatue = (isStatueCategory || isStatueName) && !isMonumentOrHeritage;
 
-  // 3. Detect generic local / residential / commercial infrastructure
+  // 3. Detect generic local / residential / commercial infrastructure & corporate offices
   const isGenericLocal =
-    /\b(society|office|hall|kalyana mandapam|function hall|community center|technical services|house|township|hostel|apartment|layout|colony|ward|circle|bank|atm|clinic|hospital)\b/i.test(
+    /\b(society|office|hall|kalyana mandapam|function hall|community center|community hall|technical services|house|township|hostel|apartment|layout|colony|ward|circle|bank|atm|clinic|hospital)\b/i.test(
       nameLower
     ) || catsLower.some((c) => c.startsWith('amenity') || c.startsWith('office'));
+
+  const isCorporateOrOffice =
+    /\b(ultimus|pvt\s*ltd|private\s*limited|ltd\b|llp\b|inc\b|technologies|technology|software|infotech|solutions|consultancy|consulting|corporate\s*office|head\s*office|headquarters|branch\s*office)\b/i.test(
+      nameLower
+    ) || catsLower.some((c) => c.startsWith('office') || c.startsWith('building.office') || c.startsWith('commercial.office') || c === 'commercial.workplace');
+
+  // Hard filter: Non-tourist infrastructure & offices can never be primary or secondary tourist attractions
+  if (isGenericLocal || isCorporateOrOffice) {
+    return {
+      placeType: 'LOCAL_ATTRACTION',
+      touristRelevanceScore: 10,
+      isReligious: false,
+      isOrdinaryStatue: false,
+      isGenericLocal: true,
+      isGenericPark: false,
+      reason: 'Non-tourist local infrastructure, community hall, or corporate facility',
+    };
+  }
 
   // 4. Detect generic municipal neighborhood park vs notable botanical/floral/nature garden
   const isGardenOrNatureReserve =
@@ -166,7 +184,7 @@ export function classifyTouristRelevance(
         c === 'tourism.sights.tomb' ||
         c.startsWith('tourism.sights.memorial.monument') ||
         c.startsWith('heritage.unesco') ||
-        c === 'heritage'
+        (c === 'heritage' && /\b(fort|palace|castle|tomb|tombs|darwaza|minar|monument|memorial|haveli|ruins|archaeological|stepwell|baoli|clock\s*tower)\b/i.test(nameLower))
     );
 
   const isTier1MuseumCulture =

@@ -22,8 +22,24 @@ export const COPILOT_TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     type: 'function',
     function: {
+      name: 'generate_itinerary',
+      description: 'Generate, optimize, and validate a complete one-day city itinerary from scratch using the user\'s preferences and trip constraints.',
+      parameters: {
+        type: 'object',
+        properties: {
+          city: { type: 'string', description: 'Target city name' },
+          pace: { type: 'string', enum: ['relaxed', 'moderate', 'packed'], description: 'Desired trip pace' },
+          crowdPreference: { type: 'string', enum: ['low', 'moderate', 'any'], description: 'Crowd tolerance' },
+          interests: { type: 'array', items: { type: 'string' }, description: 'Target interest categories (e.g. ["History", "Nature"])' },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'get_current_trip',
-      description: 'Get high-level summary of current trip constraints (city, budget, travel mode, time window).',
+      description: 'Get high-level summary of current trip constraints (city, travel mode, time window).',
       parameters: {
         type: 'object',
         properties: {},
@@ -34,7 +50,7 @@ export const COPILOT_TOOL_DEFINITIONS: ToolDefinition[] = [
     type: 'function',
     function: {
       name: 'get_current_itinerary',
-      description: 'Get detailed current itinerary stops, arrival/departure times, costs, and safety buffers.',
+      description: 'Get detailed current itinerary stops, arrival/departure times, and safety buffers.',
       parameters: {
         type: 'object',
         properties: {},
@@ -61,7 +77,7 @@ export const COPILOT_TOOL_DEFINITIONS: ToolDefinition[] = [
     type: 'function',
     function: {
       name: 'get_place_details',
-      description: 'Get factual details, opening hours, admission cost, and coordinates for a specific place.',
+      description: 'Get factual details, opening hours, and coordinates for a specific place.',
       parameters: {
         type: 'object',
         properties: {
@@ -116,7 +132,7 @@ export const COPILOT_TOOL_DEFINITIONS: ToolDefinition[] = [
             type: 'object',
             properties: {
               category: { type: 'string', description: 'Desired category (e.g. "museum", "park")' },
-              isFree: { type: 'boolean', description: 'Must have zero admission cost' },
+              isFree: { type: 'boolean', description: 'Free public sight or open admission' },
               interest: { type: 'string', description: 'Target interest tag' },
             },
           },
@@ -136,21 +152,6 @@ export const COPILOT_TOOL_DEFINITIONS: ToolDefinition[] = [
           targetPosition: { type: 'number', description: 'Target 1-based stop position' },
         },
         required: ['placeName', 'targetPosition'],
-      },
-    },
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'change_budget',
-      description: 'Modify the total trip budget limit and re-optimize / validate schedule.',
-      parameters: {
-        type: 'object',
-        properties: {
-          total: { type: 'number', description: 'New total budget amount' },
-          currency: { type: 'string', description: 'Currency symbol (default: current currency)' },
-        },
-        required: ['total'],
       },
     },
   },
@@ -190,7 +191,7 @@ export const COPILOT_TOOL_DEFINITIONS: ToolDefinition[] = [
     type: 'function',
     function: {
       name: 'change_people',
-      description: 'Update the number of travelers to recalibrate group admission costs.',
+      description: 'Update the number of travelers for the trip.',
       parameters: {
         type: 'object',
         properties: {
@@ -261,7 +262,7 @@ export const COPILOT_TOOL_DEFINITIONS: ToolDefinition[] = [
         properties: {
           actionType: {
             type: 'string',
-            description: 'Action to simulate (e.g. "CHANGE_TRAVEL_MODE", "CHANGE_BUDGET", "ADD_PLACE")',
+            description: 'Action to simulate (e.g. "CHANGE_TRAVEL_MODE", "ADD_PLACE")',
           },
           parameters: {
             type: 'object',
@@ -309,7 +310,7 @@ export const COPILOT_TOOL_DEFINITIONS: ToolDefinition[] = [
     type: 'function',
     function: {
       name: 'suggest_improvements',
-      description: 'Analyze current itinerary and generate recommendations for unused time, savings, or variety.',
+      description: 'Analyze current itinerary and generate recommendations for unused time, pace, or variety.',
       parameters: {
         type: 'object',
         properties: {},
@@ -324,7 +325,7 @@ export const COPILOT_TOOL_DEFINITIONS: ToolDefinition[] = [
       parameters: {
         type: 'object',
         properties: {
-          topic: { type: 'string', description: 'What to explain (e.g. "budget", "travel_time", "why_omitted")' },
+          topic: { type: 'string', description: 'What to explain (e.g. "travel_time", "why_omitted")' },
           question: { type: 'string', description: 'The user question' },
         },
       },

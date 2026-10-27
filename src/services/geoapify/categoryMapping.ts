@@ -5,7 +5,7 @@
  * Enforces balanced category defaults when user interests are omitted.
  */
 
-import { PlaceCategory } from '@/domain';
+import type { PlaceCategory } from '@/domain';
 
 /**
  * Valid Geoapify v2 Categories mapped by standard user interest tags.
@@ -181,9 +181,33 @@ export function resolveTargetCategories(interests?: string[]): {
 
 /**
  * Maps raw Geoapify category array to domain PlaceCategory enum.
+ * Guards against falsely classifying software offices (e.g. Ultimus) or community halls
+ * into tourist categories.
  */
-export function mapRawCategoriesToPlaceCategory(categories: string[] = []): PlaceCategory {
+export function mapRawCategoriesToPlaceCategory(categories: string[] = [], name?: string): PlaceCategory {
   const joined = categories.join(' ').toLowerCase();
+  const nameLower = (name || '').trim().toLowerCase();
+
+  // Guard against non-tourist venues (Community halls, offices, software companies like Ultimus)
+  const isCorporateOrOffice =
+    /\b(ultimus|pvt\s*ltd|private\s*limited|ltd\b|llp\b|inc\b|technologies|technology|software|infotech|solutions|consultancy|consulting|corporate\s*office|head\s*office|headquarters|branch\s*office)\b/i.test(
+      nameLower
+    ) ||
+    joined.includes('office') ||
+    joined.includes('commercial.office') ||
+    joined.includes('commercial.workplace');
+
+  const isCommunityOrSociety =
+    /\b(community\s*hall|community\s*centre|community\s*center|function\s*hall|kalyana\s*mandapam|kalyanamandapam|shadi\s*khana|marriage\s*hall|banquet\s*hall|residential\s*society|housing\s*society|apartments?|residency)\b/i.test(
+      nameLower
+    ) ||
+    joined.includes('amenity.community_centre') ||
+    joined.includes('amenity.town_hall') ||
+    joined.includes('building.residential');
+
+  if (isCorporateOrOffice || isCommunityOrSociety) {
+    return 'other';
+  }
 
   if (joined.includes('museum')) return 'museum';
   if (joined.includes('historic') || joined.includes('heritage') || joined.includes('archaeological')) {
@@ -207,5 +231,5 @@ export function mapRawCategoriesToPlaceCategory(categories: string[] = []): Plac
     return 'attraction';
   }
 
-  return 'attraction';
+  return 'other';
 }

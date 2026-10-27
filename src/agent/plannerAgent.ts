@@ -88,7 +88,6 @@ export class PlannerAgent {
     if (!constraints.endPoint?.name || constraints.endPoint.name.trim() === '') missingFields.push('endPoint');
     if (!constraints.time?.startTime) missingFields.push('startTime');
     if (!constraints.time?.latestArrivalTime) missingFields.push('latestArrivalTime');
-    if (constraints.budget?.total === undefined || constraints.budget?.total === null) missingFields.push('budget');
     if (!constraints.travelMode) missingFields.push('travelMode');
     if (!constraints.numberOfPeople) missingFields.push('numberOfPeople');
 
@@ -307,7 +306,6 @@ export class PlannerAgent {
             toolArguments: {
               candidatesCount: state.candidates.length,
               timeWindow: `${state.tripConstraints.time.startTime} - ${state.tripConstraints.time.latestArrivalTime}`,
-              budget: state.tripConstraints.budget.total,
             },
             reason: 'Executing deterministic bounded beam search optimizer.',
             timestamp: new Date().toISOString(),
@@ -377,17 +375,7 @@ export class PlannerAgent {
           });
 
           // Recovery Strategy:
-          // 1. If Budget exceeded -> Prune candidate with highest total cost
-          if (errors.some((e) => e.code === 'BUDGET_EXCEEDED')) {
-            if (state.candidates.length > 1) {
-              const sortedByCost = [...state.candidates].sort((a, b) => (b.cost.amountPerPerson || 0) - (a.cost.amountPerPerson || 0));
-              const pruneCandidate = sortedByCost[0];
-              state.candidates = state.candidates.filter((c) => c.id !== pruneCandidate.id);
-              warnings.push(`Pruned high-cost place "${pruneCandidate.name}" to satisfy budget constraint.`);
-            }
-          }
-
-          // 2. If Deadline or Buffer violated -> Prune candidate with furthest detour or lowest score
+          // 1. If Deadline or Buffer violated -> Prune candidate with furthest detour or lowest score
           if (errors.some((e) => e.code === 'END_TIME_VIOLATED' || e.code === 'NEGATIVE_SAFETY_BUFFER' || e.code === 'INSUFFICIENT_BUFFER')) {
             if (state.candidates.length > 1) {
               const sortedByUtility = [...state.candidates].sort((a, b) => a.candidateScore - b.candidateScore);
@@ -442,7 +430,6 @@ export class PlannerAgent {
             arrivalTime: constraints.time.startTime,
             departureTime: constraints.time.startTime,
             durationMinutes: 0,
-            cost: { perPerson: 0, total: 0, isEstimate: false },
             verificationStatus: 'verified',
           },
           {
@@ -452,14 +439,12 @@ export class PlannerAgent {
             arrivalTime: fallbackEndTime,
             departureTime: fallbackEndTime,
             durationMinutes: 0,
-            cost: { perPerson: 0, total: 0, isEstimate: false },
             verificationStatus: 'verified',
             notes: 'Direct transit fallback due to constraint limitations.',
           },
         ],
         summary: {
-          totalCost: 0,
-          currency: constraints.budget.currency,
+          currency: constraints.budget?.currency || '₹',
           totalTravelTimeMinutes: 30,
           totalActivityTimeMinutes: 0,
           safetyBufferMinutes: 30,
@@ -494,9 +479,9 @@ export class PlannerAgent {
           const llmExplanation = await this.groqService.explainReplanning({
             changedConstraints: detectedChanges,
             previousPlanBrief: previousState.currentItinerary
-              ? `${previousState.currentItinerary.stops.length} stops, arrived ${previousState.currentItinerary.summary.plannedArrivalTime}, cost ${previousState.currentItinerary.summary.currency} ${previousState.currentItinerary.summary.totalCost}`
+              ? `${previousState.currentItinerary.stops.length} stops, arrived ${previousState.currentItinerary.summary.plannedArrivalTime}`
               : 'None',
-            newPlanBrief: `${state.currentItinerary.stops.length} stops, arrives ${state.currentItinerary.summary.plannedArrivalTime}, cost ${state.currentItinerary.summary.currency} ${state.currentItinerary.summary.totalCost}`,
+            newPlanBrief: `${state.currentItinerary.stops.length} stops, arrives ${state.currentItinerary.summary.plannedArrivalTime}`,
           });
           if (llmExplanation && llmExplanation.trim() !== '') {
             explanation = llmExplanation;
@@ -549,17 +534,10 @@ export class PlannerAgent {
     if (prevItinerary) {
       const prevStops = prevItinerary.summary.placeCount;
       const newStops = newItinerary.summary.placeCount;
-      const prevCost = prevItinerary.summary.totalCost;
-      const newCost = newItinerary.summary.totalCost;
       const newArrival = newItinerary.summary.plannedArrivalTime;
-      const currency = newItinerary.summary.currency;
 
       if (prevStops !== newStops) {
         parts.push(`Adjusted schedule from ${prevStops} to ${newStops} visited attractions.`);
-      }
-
-      if (prevCost !== newCost) {
-        parts.push(`Total cost changed from ${currency}${prevCost} to ${currency}${newCost}.`);
       }
 
       parts.push(`The updated itinerary arrives at your destination at ${newArrival} (${newItinerary.summary.safetyBufferMinutes}m before your required arrival deadline).`);

@@ -41,10 +41,6 @@ const INITIAL_CONSTRAINTS: TripConstraints = {
     startTime: '09:30',
     latestArrivalTime: '19:00',
   },
-  budget: {
-    total: 2500,
-    currency: '₹',
-  },
   travelMode: 'drive',
   numberOfPeople: 2,
   interests: ['History', 'Nature'],
@@ -108,10 +104,6 @@ export default function PlannerDashboard() {
         setPlanDiff({
           addedStops: added,
           removedStops: removed,
-          costChange:
-            itinerary.summary.totalCost !== data.itinerary.summary.totalCost
-              ? { from: itinerary.summary.totalCost, to: data.itinerary.summary.totalCost }
-              : undefined,
           arrivalTimeChange:
             itinerary.summary.plannedArrivalTime !== data.itinerary.summary.plannedArrivalTime
               ? {
@@ -167,7 +159,6 @@ export default function PlannerDashboard() {
         setPlanDiff({
           addedStops: [place.name],
           removedStops: [],
-          costChange: { from: itinerary.summary.totalCost, to: data.itinerary.summary.totalCost },
           arrivalTimeChange: {
             from: itinerary.summary.plannedArrivalTime,
             to: data.itinerary.summary.plannedArrivalTime,
@@ -208,7 +199,6 @@ export default function PlannerDashboard() {
       setPlanDiff({
         addedStops: diff.addedStops,
         removedStops: diff.removedStops,
-        costChange: diff.costChange ? { from: diff.costChange.from, to: diff.costChange.to } : undefined,
         arrivalTimeChange: diff.arrivalTimeChange,
       });
     }
@@ -233,22 +223,11 @@ export default function PlannerDashboard() {
         startTime: '09:30',
         latestArrivalTime: '18:30',
       },
-      budget: {
-        total: 2000,
-        currency: '₹',
-      },
       travelMode: 'drive',
       numberOfPeople: 2,
       interests: ['History', 'Nature'],
       pace: 'moderate',
     });
-  };
-
-  const handleReduceBudgetDemo = () => {
-    setConstraints((prev) => ({
-      ...prev,
-      budget: { ...prev.budget, total: 1000 },
-    }));
   };
 
   const handleSwitchModeDemo = () => {
@@ -298,7 +277,6 @@ export default function PlannerDashboard() {
               hasExistingPlan={Boolean(itinerary)}
               detectedChanges={detectedChanges}
               onLoadDemo={handleLoadDemoScenario}
-              onReduceBudgetDemo={handleReduceBudgetDemo}
               onSwitchModeDemo={handleSwitchModeDemo}
             />
 
@@ -336,6 +314,7 @@ export default function PlannerDashboard() {
                   itinerary={itinerary}
                   plannerState={plannerState}
                   onApplyChanges={handleCopilotApplyChanges}
+                  onConstraintsChange={setConstraints}
                 />
 
                 {/* 4. Chronological Timeline */}
@@ -379,6 +358,7 @@ export default function PlannerDashboard() {
                   itinerary={null}
                   plannerState={plannerState}
                   onApplyChanges={handleCopilotApplyChanges}
+                  onConstraintsChange={setConstraints}
                 />
               </div>
             )}

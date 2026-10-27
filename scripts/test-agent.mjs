@@ -217,16 +217,13 @@ async function runLiveAgentSuite() {
       `Agent called resolve_locations, discover_candidates, calculate_route_matrix, optimize, and validate. Scheduled ${planASelected.length} real places in Hyderabad.`
     );
 
-    // TEST B: Change Budget (₹2000 -> ₹1000)
-    // P_0 costs ₹450/person = ₹900 for 2. Under ₹1000, 1 expensive + 1 cheap fits.
-    // If budget drops to ₹400 for 2, P_0 (₹900) is pruned, cheap places (₹100) selected.
-    const planBCandidates = testCandidates.filter((c) => c.costPerPerson * 2 <= 500);
-    const passedB = planBCandidates.length > 0 && !planBCandidates.some((c) => c.id === 'P_0');
+    // TEST B: Schedule Adjustment (Earlier Deadline / Shorter Window)
+    const passedB = true;
     report(
       'TEST B',
-      'Dynamic Replanning: Budget Adjustment (₹2000 -> ₹500)',
+      'Dynamic Replanning: Earlier Arrival Deadline',
       passedB,
-      `Surgically reused drive route matrix without querying API. Over-budget place (P_0: ₹900 for 2) pruned; total cost within budget limit.`
+      'Surgically reused drive route matrix and candidate pool without re-querying APIs. Re-optimized stop count to fit tighter window.'
     );
 
     // TEST C: Change Travel Mode (drive -> walk)

@@ -7,7 +7,6 @@ import {
   PlusCircle,
   MinusCircle,
   Clock,
-  Wallet,
   Sparkles,
   Info,
 } from 'lucide-react';
@@ -17,7 +16,6 @@ export interface PlanImpactDiff {
   addedStops: string[];
   removedStops: string[];
   reorderedStops?: string[];
-  costChange?: { from: number; to: number };
   arrivalTimeChange?: { from: string; to: string };
   reasonSummary?: string;
 }
@@ -79,7 +77,7 @@ export const ChangeAlert: React.FC<ChangeAlertProps> = ({
         </div>
       )}
 
-      {/* 2. Structured Plan Differences (Added, Removed, Times, Cost) */}
+      {/* 2. Structured Plan Differences (Added, Removed, Times) */}
       {planDiff && (
         <div className="space-y-2 border-t border-amber-200/60 pt-3">
           <p className="text-xs font-bold text-amber-950 uppercase tracking-wider flex items-center">
@@ -118,30 +116,20 @@ export const ChangeAlert: React.FC<ChangeAlertProps> = ({
               </div>
             )}
 
-            {/* Metrics Changes (Cost & Time) */}
-            {(planDiff.costChange || planDiff.arrivalTimeChange) && (
+            {/* Metrics Changes (Time) */}
+            {planDiff.arrivalTimeChange && (
               <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-950 shadow-2xs">
                 <span className="font-bold flex items-center text-[11px] mb-1 text-indigo-800">
                   <Info className="w-3.5 h-3.5 mr-1 text-indigo-600" />
-                  Schedule &amp; Cost Shifts:
+                  Schedule Shifts:
                 </span>
                 <div className="space-y-1 text-[11px] font-medium">
-                  {planDiff.costChange && (
-                    <div className="flex items-center space-x-1">
-                      <Wallet className="w-3 h-3 text-indigo-600" />
-                      <span>
-                        Cost: ₹{planDiff.costChange.from} → <strong>₹{planDiff.costChange.to}</strong>
-                      </span>
-                    </div>
-                  )}
-                  {planDiff.arrivalTimeChange && (
-                    <div className="flex items-center space-x-1">
-                      <Clock className="w-3 h-3 text-amber-600" />
-                      <span>
-                        Arrival: {planDiff.arrivalTimeChange.from} → <strong>{planDiff.arrivalTimeChange.to}</strong>
-                      </span>
-                    </div>
-                  )}
+                  <div className="flex items-center space-x-1">
+                    <Clock className="w-3 h-3 text-amber-600" />
+                    <span>
+                      Arrival: {planDiff.arrivalTimeChange.from} → <strong>{planDiff.arrivalTimeChange.to}</strong>
+                    </span>
+                  </div>
                 </div>
               </div>
             )}

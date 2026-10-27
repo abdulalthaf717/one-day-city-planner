@@ -165,18 +165,8 @@ export class DeterministicValidator implements IItineraryValidator {
     }
 
     // -------------------------------------------------------------
-    // Check 8: Budget respected
+    // Check 8: Budget check removed (unverified pricing not enforced)
     // -------------------------------------------------------------
-    const totalCost = itinerary.summary.totalCost;
-    const budgetLimit = constraints.budget.total;
-    if (totalCost > budgetLimit) {
-      const excess = totalCost - budgetLimit;
-      errors.push({
-        code: 'BUDGET_EXCEEDED',
-        message: `Total estimated cost (${totalCost} ${constraints.budget.currency}) exceeds budget (${budgetLimit} ${constraints.budget.currency}) by ${excess} ${constraints.budget.currency}.`,
-        excessAmount: excess,
-      });
-    }
 
     // -------------------------------------------------------------
     // Check 9: Travel mode respected
@@ -263,13 +253,6 @@ export class DeterministicValidator implements IItineraryValidator {
     // -------------------------------------------------------------
     for (const stop of stops) {
       if (stop.type === 'place' || stop.type === 'meal') {
-        if (!stop.costConfidence) {
-          warnings.push({
-            code: 'MISSING_COST_CONFIDENCE',
-            message: `Stop "${stop.title}" is missing cost confidence classification.`,
-            targetPlaceId: stop.placeId,
-          });
-        }
         if (!stop.durationConfidence) {
           warnings.push({
             code: 'MISSING_DURATION_CONFIDENCE',
@@ -281,10 +264,17 @@ export class DeterministicValidator implements IItineraryValidator {
     }
 
     const isValid = errors.length === 0;
+    const totalCost = itinerary.summary.totalCost;
+    const budgetLimit = constraints.budget?.total;
+    const remainingBudget =
+      budgetLimit !== undefined && totalCost !== undefined
+        ? Math.max(0, budgetLimit - totalCost)
+        : undefined;
+
     const metrics: ValidationMetrics = {
       totalCost,
       budgetLimit,
-      remainingBudget: Math.max(0, budgetLimit - totalCost),
+      remainingBudget,
       totalDurationMinutes:
         itinerary.summary.totalTravelTimeMinutes + itinerary.summary.totalActivityTimeMinutes,
       availableMinutes,

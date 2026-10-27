@@ -90,8 +90,7 @@ export class DeterministicOptimizer implements IItineraryOptimizer {
     );
 
     const stops: ItineraryStop[] = [];
-    const pax = constraints.numberOfPeople || 1;
-    const currency = constraints.budget.currency || '₹';
+    const currency = constraints.budget?.currency || '₹';
 
     // 1. START STOP
     stops.push({
@@ -106,8 +105,6 @@ export class DeterministicOptimizer implements IItineraryOptimizer {
       visitDurationMinutes: 0,
       travelFromPreviousMinutes: 0,
       travelFromPreviousMeters: 0,
-      cost: { perPerson: 0, total: 0, isEstimate: false },
-      estimatedCost: 0,
       verificationStatus: 'verified',
       notes: `Trip begins at starting point. Selected travel mode: ${constraints.travelMode}.`,
     });
@@ -118,9 +115,6 @@ export class DeterministicOptimizer implements IItineraryOptimizer {
     for (const assignment of output.schedule) {
       const place = candidateMap.get(assignment.placeId);
       const isMeal = place?.category === 'restaurant' || place?.category === 'cafe';
-
-      const perPersonCost = place?.cost.amountPerPerson || 0;
-      const totalCost = assignment.estimatedCost ?? perPersonCost * pax;
 
       stops.push({
         id: assignment.placeId,
@@ -135,15 +129,8 @@ export class DeterministicOptimizer implements IItineraryOptimizer {
         visitDurationMinutes: assignment.durationMinutes,
         travelFromPreviousMinutes: assignment.travelMinutesFromPrevious,
         travelFromPreviousMeters: assignment.distanceMetersFromPrevious,
-        estimatedCost: totalCost,
         openingStatus: assignment.openingStatus,
-        costConfidence: assignment.costConfidence,
         durationConfidence: assignment.durationConfidence,
-        cost: {
-          perPerson: perPersonCost,
-          total: totalCost,
-          isEstimate: assignment.costConfidence === 'estimated',
-        },
         travelFromPrevious: {
           distanceMeters: assignment.distanceMetersFromPrevious,
           durationMinutes: assignment.travelMinutesFromPrevious,
@@ -177,8 +164,6 @@ export class DeterministicOptimizer implements IItineraryOptimizer {
       visitDurationMinutes: 0,
       travelFromPreviousMinutes: finalTravelMinutes,
       travelFromPreviousMeters: finalDistanceMeters,
-      cost: { perPerson: 0, total: 0, isEstimate: false },
-      estimatedCost: 0,
       travelFromPrevious: {
         distanceMeters: finalDistanceMeters,
         durationMinutes: finalTravelMinutes,
@@ -195,27 +180,12 @@ export class DeterministicOptimizer implements IItineraryOptimizer {
     ];
 
     const warnings: string[] = [];
-    let hasUncertainCost = false;
 
     for (const s of output.schedule) {
-      if (s.costConfidence === 'uncertain' || s.costConfidence === 'unknown') {
-        hasUncertainCost = true;
-      }
       if (s.openingStatus === 'unverified') {
         warnings.push(`Opening hours for "${s.name || s.placeId}" are unverified.`);
       }
     }
-
-    if (hasUncertainCost) {
-      assumptions.push('Some places lack published ticket fees; costs reflect known & estimated amounts only.');
-    }
-
-    const budgetStatus =
-      output.totalCost > constraints.budget.total
-        ? 'exceeded'
-        : hasUncertainCost
-        ? 'uncertain'
-        : 'within_budget';
 
     const startMin = timeStringToMinutes(constraints.time.startTime);
     const endMin = output.plannedEndArrivalMinutes ?? timeStringToMinutes(output.plannedArrivalTimeAtEnd);
@@ -230,7 +200,6 @@ export class DeterministicOptimizer implements IItineraryOptimizer {
       Math.max(0, deadlineMin - endMin - safetyBuffer);
 
     const summary: ItinerarySummary = {
-      totalCost: output.totalCost,
       currency,
       totalTravelTimeMinutes: output.totalTravelMinutes,
       totalActivityTimeMinutes: output.totalActivityMinutes,
@@ -266,9 +235,6 @@ export class DeterministicOptimizer implements IItineraryOptimizer {
       totalVisitMinutes: output.totalActivityMinutes,
       totalTripMinutes,
       totalDistanceMeters,
-      estimatedTotalCost: output.totalCost,
-      budget: constraints.budget.total,
-      budgetStatus,
       safetyBufferMinutes: safetyBuffer,
       unusedAvailableMinutes: unusedAvailable,
       plannedEndArrivalMinutes: endMin,

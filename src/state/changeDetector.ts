@@ -80,23 +80,6 @@ export function detectConstraintChanges(
     });
   }
 
-  // Budget change -> prune or re-admit candidate stops
-  if (
-    previous.budget.total !== current.budget.total ||
-    previous.budget.currency !== current.budget.currency
-  ) {
-    changes.push({
-      field: 'budget.total',
-      label: 'Budget Limit',
-      oldValue: `${previous.budget.currency} ${previous.budget.total}`,
-      newValue: `${current.budget.currency} ${current.budget.total}`,
-      requiresCandidateRetrieval: false,
-      requiresRouteRecalculation: false,
-      requiresCostRecalculation: true,
-      description: `Trip budget changed to ${current.budget.currency} ${current.budget.total}`,
-    });
-  }
-
   // Available start time change
   if (previous.time.startTime !== current.time.startTime) {
     changes.push({
@@ -134,7 +117,7 @@ export function detectConstraintChanges(
       newValue: current.numberOfPeople,
       requiresCandidateRetrieval: false,
       requiresRouteRecalculation: false,
-      requiresCostRecalculation: true,
+      requiresCostRecalculation: false,
       description: `Party size adjusted from ${previous.numberOfPeople} to ${current.numberOfPeople}`,
     });
   }

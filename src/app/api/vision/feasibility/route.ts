@@ -48,26 +48,16 @@ export async function POST(req: NextRequest) {
     // Check against current itinerary if one exists
     if (itinerary && itinerary.summary) {
       const currentSafetyBuffer = itinerary.summary.safetyBufferMinutes || 0;
-      const currentCost = itinerary.summary.totalCost || 0;
-      const placeCost = candidatePlace.cost.totalForGroup || candidatePlace.cost.amountPerPerson || 0;
-      const projectedCost = currentCost + placeCost;
-      const budgetLimit = constraints.budget.total;
-
       const fitsTime = currentSafetyBuffer >= totalExtraTimeNeeded;
-      const fitsBudget = projectedCost <= budgetLimit;
-      const canFit = fitsTime && fitsBudget;
+      const canFit = fitsTime;
 
       const delayMinutes = fitsTime ? 0 : totalExtraTimeNeeded - currentSafetyBuffer;
 
       let reason = '';
       if (canFit) {
-        reason = `${candidatePlace.name} can be added while keeping your current time, budget, and end-point constraints.`;
-      } else if (!fitsTime && !fitsBudget) {
-        reason = `${candidatePlace.name} cannot be added without exceeding both your arrival deadline (by ~${delayMinutes}m) and budget limit (by ${constraints.budget.currency}${projectedCost - budgetLimit}).`;
-      } else if (!fitsTime) {
-        reason = `${candidatePlace.name} cannot be added to the current itinerary without violating your available time (requires ${totalExtraTimeNeeded}m, but current buffer is ${currentSafetyBuffer}m).`;
+        reason = `${candidatePlace.name} can be added while keeping your current time and arrival deadline constraints.`;
       } else {
-        reason = `${candidatePlace.name} fits your schedule but exceeds your budget by ${constraints.budget.currency}${projectedCost - budgetLimit}.`;
+        reason = `${candidatePlace.name} cannot be added to the current itinerary without violating your available time (requires ~${totalExtraTimeNeeded}m, but current buffer is ${currentSafetyBuffer}m).`;
       }
 
       return NextResponse.json({
@@ -75,12 +65,10 @@ export async function POST(req: NextRequest) {
         feasibility: {
           canFit,
           fitsTime,
-          fitsBudget,
           visitDurationMinutes: visitMinutes,
           additionalTravelMinutes,
           remainingBufferMinutes: currentSafetyBuffer,
           delayMinutes,
-          costIncrease: placeCost,
           reason,
         },
       });
@@ -97,12 +85,10 @@ export async function POST(req: NextRequest) {
       feasibility: {
         canFit,
         fitsTime: canFit,
-        fitsBudget: true,
         visitDurationMinutes: visitMinutes,
         additionalTravelMinutes,
         remainingBufferMinutes: Math.max(0, windowMinutes - (totalExtraTimeNeeded + 30)),
         delayMinutes: canFit ? 0 : (totalExtraTimeNeeded + 30) - windowMinutes,
-        costIncrease: candidatePlace.cost.totalForGroup || 0,
         reason: canFit
           ? `${candidatePlace.name} can fit within your planned ${windowMinutes}m daily window.`
           : `${candidatePlace.name} exceeds your available daily duration of ${windowMinutes}m.`,

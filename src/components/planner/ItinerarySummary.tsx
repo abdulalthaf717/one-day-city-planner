@@ -2,7 +2,6 @@
 
 import React from 'react';
 import {
-  Wallet,
   Clock,
   Shield,
   Activity,
@@ -40,10 +39,6 @@ export const ItinerarySummary: React.FC<ItinerarySummaryProps> = ({
   constraints,
 }) => {
   const { summary } = itinerary;
-  const currency = summary.currency || '₹';
-  const totalBudget = constraints?.budget.total || summary.totalCost;
-  const totalSpend = summary.totalCost;
-  const remainingBudget = Math.max(0, totalBudget - totalSpend);
 
   // Time calculations
   const travelMins = summary.totalTravelTimeMinutes || 0;
@@ -64,12 +59,6 @@ export const ItinerarySummary: React.FC<ItinerarySummaryProps> = ({
   const remainingFreeMins =
     summary.unusedAvailableMinutes ??
     Math.max(0, rawGap - safetyBufferMins);
-
-  // Cost categories breakdown
-  let knownSpend = 0;
-  let estimatedSpend = 0;
-  let freeCount = 0;
-  let unknownCount = 0;
 
   // Category distribution tracking (Requirements 33 & 34)
   const categoryCounts: Record<string, { count: number; icon: string }> = {};
@@ -99,19 +88,6 @@ export const ItinerarySummary: React.FC<ItinerarySummaryProps> = ({
   itinerary.stops.forEach((stop) => {
     if (stop.type === 'start' || stop.type === 'end') return;
 
-    const costVal = stop.cost?.total || 0;
-    const costSource = stop.place?.costSource || (costVal > 0 ? 'estimated' : 'free');
-
-    if (costSource === 'known') {
-      knownSpend += costVal;
-    } else if (costSource === 'free' || stop.place?.cost?.isFree) {
-      freeCount++;
-    } else if (costSource === 'unknown' || (costVal === 0 && !stop.place?.cost?.isFree)) {
-      unknownCount++;
-    } else {
-      estimatedSpend += costVal;
-    }
-
     const meta = getCategoryMeta(stop.place?.category, stop.type === 'meal');
     if (!categoryCounts[meta.label]) {
       categoryCounts[meta.label] = { count: 1, icon: meta.icon };
@@ -131,7 +107,7 @@ export const ItinerarySummary: React.FC<ItinerarySummaryProps> = ({
             Trip Summary &amp; Schedule
           </h2>
           <p className="text-xs text-slate-500 font-medium">
-            Realistic road-network timing, category balance, and transparent cost metrics.
+            Realistic road-network timing, category balance, and verified schedule feasibility.
           </p>
         </div>
 
@@ -152,23 +128,9 @@ export const ItinerarySummary: React.FC<ItinerarySummaryProps> = ({
         )}
       </div>
 
-      {/* Section 35 & 36: Clean Summary Cards (Small Label, Large Value, Short Explanation) */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {/* 1. BUDGET */}
-        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
-          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 flex items-center justify-between">
-            <span>Budget</span>
-            <Wallet className="w-3 h-3 text-slate-400" />
-          </div>
-          <p className="text-xl font-extrabold text-slate-900 tracking-tight my-0.5">
-            {currency}{totalSpend}
-          </p>
-          <p className="text-[11px] font-medium text-emerald-700">
-            {currency}{remainingBudget} remaining
-          </p>
-        </div>
-
-        {/* 2. ACTIVITY TIME */}
+      {/* Clean Summary Cards (Small Label, Large Value, Short Explanation) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {/* 1. ACTIVITY TIME */}
         <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 flex items-center justify-between">
             <span>Activity Time</span>
@@ -182,7 +144,7 @@ export const ItinerarySummary: React.FC<ItinerarySummaryProps> = ({
           </p>
         </div>
 
-        {/* 3. TRAVEL TIME */}
+        {/* 2. TRAVEL TIME */}
         <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 flex items-center justify-between">
             <span>Travel Time</span>
@@ -196,7 +158,7 @@ export const ItinerarySummary: React.FC<ItinerarySummaryProps> = ({
           </p>
         </div>
 
-        {/* 4. SAFETY BUFFER */}
+        {/* 3. SAFETY BUFFER */}
         <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 flex items-center justify-between">
             <span>Safety Buffer</span>
@@ -210,7 +172,7 @@ export const ItinerarySummary: React.FC<ItinerarySummaryProps> = ({
           </p>
         </div>
 
-        {/* 5. REMAINING FREE TIME */}
+        {/* 4. REMAINING FREE TIME */}
         <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 flex items-center justify-between">
             <span>Remaining Free Time</span>
@@ -224,7 +186,7 @@ export const ItinerarySummary: React.FC<ItinerarySummaryProps> = ({
           </p>
         </div>
 
-        {/* 6. DESTINATION ARRIVAL */}
+        {/* 5. DESTINATION ARRIVAL */}
         <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 flex items-center justify-between">
             <span>Arrival</span>
@@ -264,51 +226,6 @@ export const ItinerarySummary: React.FC<ItinerarySummaryProps> = ({
               </span>
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* Transparent Cost Accounting Table */}
-      <div className="rounded-xl border border-slate-200/80 p-4 bg-slate-50/50 space-y-2.5">
-        <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center">
-            <Wallet className="w-3.5 h-3.5 mr-1.5 text-indigo-600" />
-            Cost Accounting &amp; Verification Breakdown
-          </span>
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200">
-            Budget: {currency}{totalBudget}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-          <div className="p-2.5 bg-white rounded-lg border border-slate-200 shadow-2xs">
-            <span className="text-slate-500 block text-[10px] font-semibold uppercase tracking-wider">
-              Known Entry Fees
-            </span>
-            <span className="font-bold text-slate-900 text-sm">{currency}{knownSpend}</span>
-          </div>
-
-          <div className="p-2.5 bg-white rounded-lg border border-slate-200 shadow-2xs">
-            <span className="text-slate-500 block text-[10px] font-semibold uppercase tracking-wider">
-              Estimated Expenses
-            </span>
-            <span className="font-bold text-slate-900 text-sm">{currency}{estimatedSpend}</span>
-          </div>
-
-          <div className="p-2.5 bg-white rounded-lg border border-slate-200 shadow-2xs">
-            <span className="text-slate-500 block text-[10px] font-semibold uppercase tracking-wider">
-              Free Public Sights
-            </span>
-            <span className="font-bold text-emerald-700 text-sm">{freeCount} stops</span>
-          </div>
-
-          <div className="p-2.5 bg-white rounded-lg border border-slate-200 shadow-2xs">
-            <span className="text-slate-500 block text-[10px] font-semibold uppercase tracking-wider">
-              Unconfirmed Sights
-            </span>
-            <span className="font-bold text-slate-700 text-sm">
-              {unknownCount > 0 ? `${unknownCount} (pay at counter)` : 'None'}
-            </span>
-          </div>
         </div>
       </div>
     </div>

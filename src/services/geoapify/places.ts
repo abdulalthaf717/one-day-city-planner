@@ -44,6 +44,7 @@ import {
   hasNatureInterest,
   hasReligiousInterest,
 } from './touristRelevance';
+import { evaluateTouristQualityGate } from './touristQualityGate';
 
 export interface CandidateDiscoveryRequest {
   city: string;
@@ -62,6 +63,8 @@ export interface CandidateDiscoveryRequest {
   peopleCount?: number;
   poolTargetSize?: number;
   bypassCache?: boolean;
+  pace?: string;
+  crowdPreference?: string;
 }
 
 export interface CandidateDiscoveryResult {
@@ -74,6 +77,7 @@ export interface CandidateDiscoveryResult {
     matchedInterests: string[];
     rawCandidateCount: number;
     deduplicatedCount: number;
+    qualityGateFilteredCount?: number;
     filteredCandidateCount: number;
     finalCandidateCount: number;
     corridor: PlanningCorridor;
@@ -210,7 +214,17 @@ export class GeoapifyPlacesService extends GeoapifyClient implements IGeoapifyPl
     // 6. Normalization into CandidatePlace objects
     const rawCandidates: CandidatePlace[] = deduplicatedFeatures.map((feat) => {
       const p = feat.properties;
-      const category: PlaceCategory = mapRawCategoriesToPlaceCategory(p.categories);
+      const qualityGate = evaluateTouristQualityGate(
+        {
+          name: p.name || '',
+          categories: p.categories || [],
+          address: p.formatted || p.address_line1,
+          website: p.website,
+        },
+        interests
+      );
+      const category: PlaceCategory =
+        qualityGate.categoryOverride || mapRawCategoriesToPlaceCategory(p.categories, p.name);
       const isVerified = Boolean(p.name && p.place_id);
 
       // Duration model
@@ -271,6 +285,13 @@ export class GeoapifyPlacesService extends GeoapifyClient implements IGeoapifyPl
         candidateScore: 50,
         estimatedDurationMin: durationResult.durationMinutes,
         estimatedCostPerPerson: costResult.cost.amountPerPerson || 0,
+        metadata: {
+          qualityGateDecision: qualityGate.decision,
+          qualityGateReason: qualityGate.reason,
+          qualityGateRule: qualityGate.matchedRule,
+          isEligibleForSightseeing: qualityGate.isEligibleForSightseeing,
+          isEligibleForDiningSupport: qualityGate.isEligibleForDiningSupport,
+        },
         actionLinks: {
           directionsUrl: `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`,
           websiteUrl: p.website || undefined,
@@ -279,8 +300,20 @@ export class GeoapifyPlacesService extends GeoapifyClient implements IGeoapifyPl
       };
     });
 
-    // 7. Deterministic basic filtering
+    // 7. Deterministic basic filtering & Tourist Place Quality Gate
+    const wantsFood = hasFoodInterest(interests);
+    let qualityGateFilteredCount = 0;
+
     const feasibleCandidates = rawCandidates.filter((cand) => {
+      const isSightseeingEligible = cand.metadata?.isEligibleForSightseeing === true;
+      const isDiningEligible = wantsFood && cand.metadata?.isEligibleForDiningSupport === true;
+
+      // Quality Gate: Exclude rejected and unverified review candidates
+      if (!isSightseeingEligible && !isDiningEligible) {
+        qualityGateFilteredCount++;
+        return false;
+      }
+
       const { isFeasible } = isCandidateFeasible(cand, corridor);
       return isFeasible;
     });
@@ -298,6 +331,8 @@ export class GeoapifyPlacesService extends GeoapifyClient implements IGeoapifyPl
       totalBudget: budget?.total,
       perPersonBudget: budget?.perPerson,
       peopleCount,
+      pace: request.pace,
+      crowdPreference: request.crowdPreference,
     };
 
     const scoredCandidates = feasibleCandidates.map((cand) => {
@@ -328,6 +363,7 @@ export class GeoapifyPlacesService extends GeoapifyClient implements IGeoapifyPl
         matchedInterests,
         rawCandidateCount,
         deduplicatedCount,
+        qualityGateFilteredCount,
         filteredCandidateCount,
         finalCandidateCount: finalCandidates.length,
         corridor,
@@ -433,8 +469,21 @@ export class GeoapifyPlacesService extends GeoapifyClient implements IGeoapifyPl
     const wantsFood = hasFoodInterest(interests);
     const wantsNature = hasNatureInterest(interests);
 
-    // 1. Filter out low-tier noise when religion is not requested
+    // 1. Filter out non-eligible candidates and low-tier noise when religion is not requested
     const filtered = candidates.filter((cand) => {
+      const qg = cand.metadata?.isEligibleForSightseeing !== undefined
+        ? {
+            isEligibleForSightseeing: cand.metadata.isEligibleForSightseeing as boolean,
+            isEligibleForDiningSupport: Boolean(cand.metadata.isEligibleForDiningSupport),
+          }
+        : evaluateTouristQualityGate(cand, interests);
+
+      const isSightEligible = qg.isEligibleForSightseeing;
+      const isDiningEligible = wantsFood && qg.isEligibleForDiningSupport;
+      if (!isSightEligible && !isDiningEligible) {
+        return false;
+      }
+
       const isReligious =
         cand.category === 'religious' ||
         (cand.categories || []).some((c) => c.includes('place_of_worship'));
@@ -605,7 +654,12 @@ export class GeoapifyPlacesService extends GeoapifyClient implements IGeoapifyPl
     city?: string
   ): CandidatePlace {
     const rawCategories = [categoryHint || 'tourism.sights'];
-    const category = mapRawCategoriesToPlaceCategory(rawCategories);
+    const qualityGate = evaluateTouristQualityGate(
+      { name: location.name, categories: rawCategories, address: location.address },
+      undefined
+    );
+    const category =
+      qualityGate.categoryOverride || mapRawCategoriesToPlaceCategory(rawCategories, location.name);
     const durationRes = estimateVisitDuration(category, rawCategories);
     const costRes = evaluatePlaceCost({
       category,
@@ -640,6 +694,13 @@ export class GeoapifyPlacesService extends GeoapifyClient implements IGeoapifyPl
       qualityScore: 85,
       travelBurdenScore: 0,
       candidateScore: 85,
+      metadata: {
+        qualityGateDecision: qualityGate.decision,
+        qualityGateReason: qualityGate.reason,
+        qualityGateRule: qualityGate.matchedRule,
+        isEligibleForSightseeing: qualityGate.isEligibleForSightseeing,
+        isEligibleForDiningSupport: qualityGate.isEligibleForDiningSupport,
+      },
       actionLinks: {
         directionsUrl: `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
           location.name + ' ' + (location.address || '')

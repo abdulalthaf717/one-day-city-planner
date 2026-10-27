@@ -44,15 +44,17 @@ export interface BudgetConstraint {
 }
 
 export type TripPace = 'relaxed' | 'moderate' | 'packed';
+export type CrowdPreference = 'low' | 'moderate' | 'any';
 
 export interface TripConstraints {
   city: string;
   startingPoint: LocationPoint;
   endPoint: LocationPoint;
   time: TimeConstraint;
-  budget: BudgetConstraint;
+  budget?: BudgetConstraint;
   travelMode: TravelMode;
   numberOfPeople: number;
   interests: string[];
   pace?: TripPace;
+  crowdPreference?: CrowdPreference;
 }

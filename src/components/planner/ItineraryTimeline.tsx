@@ -9,7 +9,6 @@ import {
   HelpCircle,
   Calendar,
   Users,
-  Wallet,
   Camera,
   Car,
   Footprints,
@@ -72,11 +71,6 @@ export const ItineraryTimeline: React.FC<ItineraryTimelineProps> = ({
           <span className="flex items-center">
             <Users className="w-3.5 h-3.5 mr-1 text-slate-400" />
             {constraints?.numberOfPeople || 2} traveler{(constraints?.numberOfPeople || 2) > 1 ? 's' : ''}
-          </span>
-          <span className="text-slate-300">•</span>
-          <span className="flex items-center">
-            <Wallet className="w-3.5 h-3.5 mr-1 text-slate-400" />
-            Budget: {itinerary.summary.currency}{constraints?.budget.total || itinerary.summary.totalCost}
           </span>
           <span className="text-slate-300">•</span>
           <span className="capitalize flex items-center font-semibold text-slate-800">
@@ -279,7 +273,7 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
           </div>
         </div>
 
-        {/* Metrics Strip: Duration, Cost, Hours */}
+        {/* Metrics Strip: Duration, Hours */}
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-slate-700 pt-2 border-t border-slate-100 font-medium">
           {stop.durationMinutes > 0 && (
             <div className="flex items-center space-x-1">
@@ -289,20 +283,6 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
               </span>
             </div>
           )}
-
-          <div>
-            <span>
-              Cost:{' '}
-              {stop.cost.total > 0 ? (
-                <strong className="text-slate-900">₹{stop.cost.total}</strong>
-              ) : stop.place?.cost?.isFree ? (
-                <strong className="text-emerald-700">Free admission</strong>
-              ) : (
-                <span className="text-amber-700">Unconfirmed (at counter)</span>
-              )}
-              {stop.cost.perPerson > 0 ? ` (₹${stop.cost.perPerson}/pax)` : ''}
-            </span>
-          </div>
 
           {stop.place?.openingHours && (
             <div className="text-slate-600">

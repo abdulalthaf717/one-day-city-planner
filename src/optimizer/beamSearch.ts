@@ -68,7 +68,6 @@ export class BeamSearchOptimizer {
 
     const startMinutes = timeStringToMinutes(constraints.time.startTime);
     const deadlineMinutes = timeStringToMinutes(constraints.time.latestArrivalTime);
-    const maxBudget = constraints.budget.total;
     const pax = constraints.numberOfPeople || 1;
     const travelMode = constraints.travelMode || 'drive';
 
@@ -294,16 +293,10 @@ export class BeamSearchOptimizer {
             continue;
           }
 
-          // 5. Budget Check
+          // 5. Cost tracking (non-constraining)
           const candCost =
-            (cand.cost.amountPerPerson || 0) * pax + (cand.cost.fixedEntryCost || 0);
+            (cand.cost?.amountPerPerson || 0) * pax + (cand.cost?.fixedEntryCost || 0);
           const nextAccumulatedCost = state.accumulatedCost + candCost;
-
-          if (nextAccumulatedCost > maxBudget) {
-            statesPruned++;
-            pruningReasons.budgetExceeded++;
-            continue;
-          }
 
           // 6. Build Candidate Stop Assignment
           const stopAssignment: ScheduledStopAssignment = {
@@ -401,13 +394,11 @@ export class BeamSearchOptimizer {
           let dominated = false;
           for (let b = 0; b < group.length; b++) {
             if (a === b) continue;
-            // State A is dominated by State B if B is strictly better or equal in time, cost, and score
+            // State A is dominated by State B if B is strictly better or equal in time and score
             if (
               group[b].currentTimeMinutes <= group[a].currentTimeMinutes &&
-              group[b].accumulatedCost <= group[a].accumulatedCost &&
               group[b].score >= group[a].score &&
               (group[b].currentTimeMinutes < group[a].currentTimeMinutes ||
-                group[b].accumulatedCost < group[a].accumulatedCost ||
                 group[b].score > group[a].score)
             ) {
               dominated = true;
@@ -449,7 +440,7 @@ export class BeamSearchOptimizer {
         totalCost: 0,
         objectiveScore: 0,
         rejectionReasons: [
-          `Could not construct any feasible plan within the time window (${constraints.time.startTime}–${constraints.time.latestArrivalTime}) and budget (${constraints.budget.total}).`,
+          `Could not construct any feasible plan within the time window (${constraints.time.startTime}–${constraints.time.latestArrivalTime}).`,
         ],
         diagnostics: {
           statesGenerated,

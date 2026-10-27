@@ -166,7 +166,7 @@ ${context.lastToolResultSummary ? `- Last Result: ${context.lastToolResultSummar
 User city: ${currentConstraints.city}
 Existing tags: ${currentConstraints.interests.join(', ') || 'None provided'}
 Available hours: ${currentConstraints.time.startTime} to ${currentConstraints.time.latestArrivalTime}
-Budget: ${currentConstraints.budget.currency} ${currentConstraints.budget.total} for ${currentConstraints.numberOfPeople} people.
+Travelers: ${currentConstraints.numberOfPeople} people.
 User freeform input: "${rawText}"
 
 Extract:

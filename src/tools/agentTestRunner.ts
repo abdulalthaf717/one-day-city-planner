@@ -3,7 +3,7 @@
  *
  * Executes Development Test Cases (TEST A through TEST J):
  * - TEST A: Initial planning (Hyderabad, VNR VJIET -> Railway Station, 10:00–20:00, drive, ₹2000, 2 pax, history + food)
- * - TEST B: Change budget (₹2000 -> ₹1000) -> reuses matrix, cost re-optimization, passes validation
+ * - TEST B: Change arrival deadline (18:00 -> 15:00) -> reuses matrix and candidates, passes validation
  * - TEST C: Change travel mode (drive -> walk) -> invalidates matrix, recalculates walking routes, passes validation
  * - TEST D: Change end point (railway station -> airport) -> re-geocodes end point, recalculates matrix, passes validation
  * - TEST E: Change interests (history -> food) -> candidate discovery/ranking changes, revised plan
@@ -72,7 +72,6 @@ export async function runAgentTests(): Promise<AgentTestReport> {
       startTime: '10:00',
       latestArrivalTime: '20:00',
     },
-    budget: { total: 2000, currency: '₹' },
     travelMode: 'drive',
     numberOfPeople: 2,
     interests: ['history', 'food'],
@@ -114,12 +113,15 @@ export async function runAgentTests(): Promise<AgentTestReport> {
   }
 
   // -----------------------------------------------------------------
-  // TEST B: Change Budget (₹2000 -> ₹1000)
+  // TEST B: Change Arrival Deadline (20:00 -> 15:00)
   // -----------------------------------------------------------------
   try {
     const constraintsB: TripConstraints = {
       ...baseConstraints,
-      budget: { total: 1000, currency: '₹' },
+      time: {
+        ...baseConstraints.time,
+        latestArrivalTime: '15:00',
+      },
     };
 
     const resB = await agent.planTrip(constraintsB, planAState);
@@ -127,23 +129,22 @@ export async function runAgentTests(): Promise<AgentTestReport> {
     const passedB =
       resB.success &&
       resB.itinerary !== undefined &&
-      resB.itinerary.summary.totalCost <= 1000 &&
       resB.diagnostics.reusedComponents.includes('routeMatrix') &&
       resB.explanation !== undefined;
 
     results.push({
       testId: 'TEST_B',
-      name: 'Dynamic Replanning: Budget Adjustment (₹2000 -> ₹1000)',
+      name: 'Dynamic Replanning: Earlier Deadline (20:00 -> 15:00)',
       passed: passedB,
       notes: passedB
-        ? `Budget change detected. Reused route matrix without re-querying APIs. Total cost ₹${resB.itinerary?.summary.totalCost} <= ₹1000. Explanation: "${resB.explanation?.substring(0, 100)}..."`
-        : `Test B failed: cost=${resB.itinerary?.summary.totalCost}, reused=${resB.diagnostics.reusedComponents.join(', ')}`,
-      diagnostics: { reused: resB.diagnostics.reusedComponents, cost: resB.itinerary?.summary.totalCost },
+        ? `Earlier deadline detected. Reused route matrix without re-querying APIs. Explanation: "${resB.explanation?.substring(0, 100)}..."`
+        : `Test B failed: reused=${resB.diagnostics.reusedComponents.join(', ')}`,
+      diagnostics: { reused: resB.diagnostics.reusedComponents },
     });
   } catch (err) {
     results.push({
       testId: 'TEST_B',
-      name: 'Dynamic Replanning: Budget Adjustment',
+      name: 'Dynamic Replanning: Earlier Deadline',
       passed: false,
       notes: err instanceof Error ? err.message : String(err),
     });
@@ -278,9 +279,9 @@ export async function runAgentTests(): Promise<AgentTestReport> {
       name: 'Dynamic Replanning: Party Size Adjustment (2 -> 5 pax)',
       passed: passedF,
       notes: passedF
-        ? `Party size changed from 2 to 5: group costs recalculated, route matrix reused without re-querying APIs. Budget compliance verified: ₹${resF.itinerary?.summary.totalCost} <= ₹2000.`
-        : 'Test F failed: route matrix not reused or budget violated.',
-      diagnostics: { reused: resF.diagnostics.reusedComponents, cost: resF.itinerary?.summary.totalCost },
+        ? 'Party size changed from 2 to 5: route matrix reused without re-querying APIs.'
+        : 'Test F failed: route matrix not reused.',
+      diagnostics: { reused: resF.diagnostics.reusedComponents },
     });
   } catch (err) {
     results.push({
@@ -416,16 +417,15 @@ export async function runAgentTests(): Promise<AgentTestReport> {
       JSON.stringify(run2.itinerary?.stops.map((s) => s.id));
 
     const sameArrival = run1.itinerary?.summary.plannedArrivalTime === run2.itinerary?.summary.plannedArrivalTime;
-    const sameCost = run1.itinerary?.summary.totalCost === run2.itinerary?.summary.totalCost;
 
-    const passedJ = run1.success && run2.success && sameStops && sameArrival && sameCost;
+    const passedJ = run1.success && run2.success && sameStops && sameArrival;
 
     results.push({
       testId: 'TEST_J',
       name: 'Determinism of Optimization & Validation Layers',
       passed: passedJ,
       notes: passedJ
-        ? `Identical inputs produced bit-for-bit identical stop sequences (${run1.itinerary?.stops.map((s) => s.title).join(' -> ')}), end arrival (${run1.itinerary?.summary.plannedArrivalTime}), and total cost (₹${run1.itinerary?.summary.totalCost}).`
+        ? `Identical inputs produced bit-for-bit identical stop sequences (${run1.itinerary?.stops.map((s) => s.title).join(' -> ')}) and end arrival (${run1.itinerary?.summary.plannedArrivalTime}).`
         : 'Test J failed: non-deterministic output detected.',
       diagnostics: { stops1: run1.itinerary?.stops.map((s) => s.id), stops2: run2.itinerary?.stops.map((s) => s.id) },
     });

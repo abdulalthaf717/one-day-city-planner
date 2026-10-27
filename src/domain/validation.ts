@@ -43,9 +43,9 @@ export interface ValidationWarning {
 }
 
 export interface ValidationMetrics {
-  totalCost: number;
-  budgetLimit: number;
-  remainingBudget: number;
+  totalCost?: number;
+  budgetLimit?: number;
+  remainingBudget?: number;
   totalDurationMinutes: number;
   availableMinutes: number;
   safetyBufferMinutes: number;

@@ -24,7 +24,7 @@ export interface ObjectiveContext {
   plannedEndMinutes: number;
   startTimeMinutes?: number;
   visitedPlaces: CandidatePlace[];
-  unknownCostCount: number;
+  unknownCostCount?: number;
   unverifiedHoursCount: number;
 }
 
@@ -40,7 +40,6 @@ export function computeObjectiveScore(context: ObjectiveContext): {
     directDistanceMeters,
     requiredBufferMinutes,
     visitedPlaces,
-    unknownCostCount,
     unverifiedHoursCount,
   } = context;
 
@@ -202,8 +201,8 @@ export function computeObjectiveScore(context: ObjectiveContext): {
     riskPenalty = 0;
   }
 
-  // 9. Uncertainty Penalty: Modest discount for unknown ticket costs or unverified hours
-  const uncertaintyPenalty = Math.min(30, unknownCostCount * 4 + unverifiedHoursCount * 3);
+  // 9. Uncertainty Penalty: Modest discount for unverified provider hours
+  const uncertaintyPenalty = Math.min(30, unverifiedHoursCount * 3);
 
   // 10. Tourist Quality Penalty (penalizes unwanted neighborhood worship, statues, excess dining, excess generic parks)
   let touristQualityPenalty = 0;

@@ -31,15 +31,23 @@ export interface TripCopilotChatProps {
     newPlannerState?: PlannerState,
     diff?: CopilotDiff
   ) => void;
+  onConstraintsChange?: (newConstraints: TripConstraints) => void;
 }
 
-const QUICK_ACTIONS = [
+const PRE_PLAN_QUICK_ACTIONS = [
+  { label: '⚡ Generate My Itinerary', prompt: 'Generate my itinerary based on my preferences' },
+  { label: '🏛 Plan a relaxed historical day', prompt: 'Plan a relaxed historical day in Hyderabad, avoiding crowded places' },
   { label: 'What’s special about Golconda Fort?', prompt: 'What’s special about Golconda Fort?' },
   { label: 'Charminar vs Salar Jung?', prompt: 'Would you recommend Charminar or Salar Jung Museum?' },
+  { label: 'What would you recommend?', prompt: 'What would you recommend?' },
+];
+
+const POST_PLAN_QUICK_ACTIONS = [
   { label: 'Suggest improvements', prompt: 'Suggest improvements for my day' },
   { label: 'Make it less tiring', prompt: 'Can we make the trip less tiring?' },
   { label: 'What if I walk?', prompt: 'What if I walk instead of drive?' },
-  { label: 'How much money left?', prompt: 'How much money is left?' },
+  { label: 'What’s special about Golconda Fort?', prompt: 'What’s special about Golconda Fort?' },
+  { label: 'Charminar vs Salar Jung?', prompt: 'Would you recommend Charminar or Salar Jung Museum?' },
 ];
 
 export function TripCopilotChat({
@@ -47,13 +55,15 @@ export function TripCopilotChat({
   itinerary,
   plannerState,
   onApplyChanges,
+  onConstraintsChange,
 }: TripCopilotChatProps) {
+  const quickActions = itinerary ? POST_PLAN_QUICK_ACTIONS : PRE_PLAN_QUICK_ACTIONS;
   const [messages, setMessages] = useState<CopilotMessage[]>([
     {
       id: 'welcome',
       role: 'assistant',
       content:
-        'Hello! I am your **Trip Copilot** — your conversational AI travel assistant. You can ask me about attractions (e.g. *"What’s special about Golconda Fort?"* or *"Charminar vs Salar Jung Museum"*), share your preferences (*"I prefer historical places and dislike crowds"*), test *"What if..."* scenarios, or directly modify your itinerary.',
+        'Hello! I am your **Trip Copilot** — your conversational AI travel assistant. You can ask me about attractions (e.g. *"What’s special about Golconda Fort?"* or *"Charminar vs Salar Jung Museum"*), share your preferences (*"I prefer historical places and dislike crowds"*), test *"What if..."* scenarios, or directly ask me to plan and generate your itinerary (e.g. *"Plan a relaxed historical day"*).',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       conversationMode: 'GENERAL_CONVERSATION',
     },
@@ -142,6 +152,11 @@ export function TripCopilotChat({
       setPendingProposal(data.pendingProposal);
       if (data.lastDiscussedPlace) {
         setLastDiscussedPlace(data.lastDiscussedPlace);
+      }
+
+      // If constraints were updated (e.g. preferences updated), propagate to parent form
+      if (data.updatedConstraints && onConstraintsChange) {
+        onConstraintsChange(data.updatedConstraints);
       }
 
       // If changes were committed to real state (not simulation and not rejected), apply them to parent dashboard
@@ -292,18 +307,6 @@ export function TripCopilotChat({
                         - Removed: {msg.diff.removedStops.join(', ')}
                       </div>
                     )}
-                    {msg.diff.costChange && (
-                      <div className="text-slate-600 flex items-center space-x-1">
-                        <span>Cost:</span>
-                        <span>
-                          {msg.diff.costChange.currency}{msg.diff.costChange.from}
-                        </span>
-                        <ArrowRight className="w-3 h-3 inline text-slate-400" />
-                        <span className="font-bold text-slate-800">
-                          {msg.diff.costChange.currency}{msg.diff.costChange.to}
-                        </span>
-                      </div>
-                    )}
                     {msg.diff.arrivalTimeChange && (
                       <div className="text-slate-600 flex items-center space-x-1">
                         <span>Arrival:</span>
@@ -363,7 +366,7 @@ export function TripCopilotChat({
       {/* Quick Action Chips Footer */}
       <div className="px-3 py-2 bg-slate-50 border-t border-slate-100 flex items-center space-x-1.5 overflow-x-auto no-scrollbar shrink-0">
         <span className="text-[10px] font-medium text-slate-400 shrink-0">Quick:</span>
-        {QUICK_ACTIONS.map((qa, idx) => (
+        {quickActions.map((qa, idx) => (
           <button
             key={idx}
             type="button"

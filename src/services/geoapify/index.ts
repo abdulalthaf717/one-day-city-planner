@@ -16,3 +16,9 @@ export * from './candidateScoring';
 export * from './routing';
 export * from './matrix';
 export * from './touristRelevance';
+export {
+  evaluateTouristQualityGate,
+  type QualityGateDecision,
+  type QualityGateCandidate,
+  type TouristQualityGateResult,
+} from './touristQualityGate';
