@@ -30,12 +30,13 @@ const suites = [
   { name: '6. Multimodal Vision & Verification', script: 'scripts/test-vision.mjs' },
   { name: '7. Comprehensive Evaluation Benchmark', script: 'scripts/test-evaluation.mjs' },
   { name: '8. Trip Copilot Chatbot & State Actions', script: 'scripts/test-copilot.mjs' },
+  { name: '9. Official Websites & Booking Links', script: 'scripts/test-links.mjs' },
 ];
 
 async function runCommand(scriptPath) {
   return new Promise((resolve) => {
     const t0 = performance.now();
-    const isTsx = scriptPath.includes('copilot');
+    const isTsx = scriptPath.includes('copilot') || scriptPath.includes('links');
     const binary = isTsx ? 'npx' : 'node';
     const args = isTsx ? ['tsx', scriptPath] : [scriptPath];
     const proc = spawn(binary, args, {

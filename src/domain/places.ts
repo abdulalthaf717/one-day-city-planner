@@ -71,7 +71,14 @@ export type TouristPlaceType =
 export interface ActionLinks {
   directionsUrl?: string;
   websiteUrl?: string;
+  websiteSource?: 'provider' | 'curated' | 'official';
   bookingUrl?: string;
+  officialBookingUrl?: string;
+  bookingVerificationStatus?: 'verified' | 'unverified' | 'unavailable';
+  bookingVerificationSource?: string;
+  bookingVerificationDate?: string;
+  bookingLabel?: string;
+  websiteLabel?: string;
   reservationUrl?: string;
 }
 
@@ -95,7 +102,12 @@ export interface CandidatePlace {
   rating?: number;
   ratingCount?: number;
   websiteUrl?: string;
+  websiteSource?: 'provider' | 'curated' | 'official';
   bookingUrl?: string;
+  officialBookingUrl?: string;
+  bookingVerificationStatus?: 'verified' | 'unverified' | 'unavailable';
+  bookingVerificationSource?: string;
+  bookingVerificationDate?: string;
   verificationStatus: VerificationStatus;
   source: 'geoapify' | 'user_upload' | 'verified_catalog';
   relevanceScore: number;

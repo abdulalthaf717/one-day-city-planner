@@ -243,6 +243,10 @@ export interface CopilotMessage {
   actionLinks?: {
     googleMapsUrl?: string;
     directionsUrl?: string;
+    websiteUrl?: string;
+    bookingUrl?: string;
+    bookingLabel?: string;
+    websiteLabel?: string;
   };
 }
 
@@ -288,6 +292,10 @@ export interface CopilotEngineResult {
   actionLinks?: {
     googleMapsUrl?: string;
     directionsUrl?: string;
+    websiteUrl?: string;
+    bookingUrl?: string;
+    bookingLabel?: string;
+    websiteLabel?: string;
   };
   error?: string;
 }

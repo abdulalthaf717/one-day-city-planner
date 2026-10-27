@@ -105,6 +105,9 @@ export class DeterministicOptimizer implements IItineraryOptimizer {
       visitDurationMinutes: 0,
       travelFromPreviousMinutes: 0,
       travelFromPreviousMeters: 0,
+      actionLinks: {
+        directionsUrl: `https://www.google.com/maps/dir/?api=1&destination=${startLoc.coordinates.lat},${startLoc.coordinates.lng}`,
+      },
       verificationStatus: 'verified',
       notes: `Trip begins at starting point. Selected travel mode: ${constraints.travelMode}.`,
     });
@@ -168,6 +171,9 @@ export class DeterministicOptimizer implements IItineraryOptimizer {
         distanceMeters: finalDistanceMeters,
         durationMinutes: finalTravelMinutes,
         mode: constraints.travelMode,
+      },
+      actionLinks: {
+        directionsUrl: `https://www.google.com/maps/dir/?api=1&destination=${endLoc.coordinates.lat},${endLoc.coordinates.lng}`,
       },
       verificationStatus: 'verified',
       notes: `Final destination deadline: ${constraints.time.latestArrivalTime} (Safety buffer: ${output.totalBufferMinutes}m).`,

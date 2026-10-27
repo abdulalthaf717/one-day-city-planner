@@ -290,6 +290,7 @@ export class TripCopilotEngine {
         lastDiscussedPlace: infoRes.discussedPlace || activeDiscussedPlace,
         toolsCalled: ['explain_itinerary'],
         suggestedActions: infoRes.suggestedActions,
+        actionLinks: infoRes.actionLinks,
       };
     }
 

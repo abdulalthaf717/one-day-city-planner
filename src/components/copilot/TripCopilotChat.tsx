@@ -11,6 +11,8 @@ import {
   Clock,
   ShieldCheck,
   Compass,
+  Ticket,
+  ExternalLink,
 } from 'lucide-react';
 import {
   CopilotDiff,
@@ -64,7 +66,7 @@ export function TripCopilotChat({
       role: 'assistant',
       content:
         'Hello! I am your **Trip Copilot** — your conversational AI travel assistant. You can ask me about attractions (e.g. *"What’s special about Golconda Fort?"* or *"Charminar vs Salar Jung Museum"*), share your preferences (*"I prefer historical places and dislike crowds"*), test *"What if..."* scenarios, or directly ask me to plan and generate your itinerary (e.g. *"Plan a relaxed historical day"*).',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: 'Just now',
       conversationMode: 'GENERAL_CONVERSATION',
     },
   ]);
@@ -139,6 +141,7 @@ export function TripCopilotChat({
         infeasibleNotice: data.infeasibleNotice,
         pendingProposal: data.pendingProposal,
         discussedPlace: data.lastDiscussedPlace,
+        actionLinks: data.actionLinks,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -287,7 +290,68 @@ export function TripCopilotChat({
                 )}
 
                 {/* Message Body */}
-                <div className="whitespace-pre-wrap">{msg.content}</div>
+                <div className="whitespace-pre-wrap">
+                  {(() => {
+                    const content = msg.content;
+                    const linkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+                    const parts: React.ReactNode[] = [];
+                    let lastIndex = 0;
+                    let match: RegExpExecArray | null;
+
+                    while ((match = linkRegex.exec(content)) !== null) {
+                      if (match.index > lastIndex) {
+                        parts.push(content.substring(lastIndex, match.index));
+                      }
+                      const label = match[1];
+                      const url = match[2];
+                      parts.push(
+                        <a
+                          key={match.index}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-indigo-600 hover:text-indigo-800 underline font-semibold inline-flex items-center"
+                        >
+                          {label}
+                          <ExternalLink className="w-2.5 h-2.5 ml-0.5 inline opacity-70" />
+                        </a>
+                      );
+                      lastIndex = match.index + match[0].length;
+                    }
+                    if (lastIndex < content.length) {
+                      parts.push(content.substring(lastIndex));
+                    }
+                    return parts.length > 0 ? parts : content;
+                  })()}
+                </div>
+
+                {/* External Action Links (Official Booking / Website) */}
+                {msg.actionLinks && (msg.actionLinks.bookingUrl || msg.actionLinks.websiteUrl) && (
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex flex-wrap gap-2">
+                    {msg.actionLinks.bookingUrl && (
+                      <a
+                        href={msg.actionLinks.bookingUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors"
+                      >
+                        <Ticket className="w-3.5 h-3.5 mr-1.5" />
+                        {msg.actionLinks.bookingLabel || 'Book Official Tickets'}
+                      </a>
+                    )}
+                    {msg.actionLinks.websiteUrl && (
+                      <a
+                        href={msg.actionLinks.websiteUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs transition-colors"
+                      >
+                        <ExternalLink className="w-3 h-3 mr-1.5 text-slate-400" />
+                        {msg.actionLinks.websiteLabel || 'Website'}
+                      </a>
+                    )}
+                  </div>
+                )}
 
                 {/* Structured Change Diff Card */}
                 {msg.diff && (

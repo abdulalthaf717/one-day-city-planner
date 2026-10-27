@@ -1037,6 +1037,34 @@ export class CopilotIntentParser {
     }
 
     // -------------------------------------------------------------
+    // Check 17.5: Ticket Booking & Official Website Link Inquiries
+    // -------------------------------------------------------------
+    const isBookingOrWebsiteInquiry =
+      /\b(book tickets?|booking|book online|buy tickets?|online tickets?|reserve tickets?|where can i book|how (?:do|can) i book|can i book|tickets? available|ticket counter|official website|website link|official link)\b/i.test(
+        lower
+      );
+
+    if (isBookingOrWebsiteInquiry) {
+      const mentionedProfile = findAttractionProfile(text);
+      const targetPlace = mentionedProfile?.canonicalName || context.lastDiscussedPlace;
+
+      return {
+        actionType: 'INFORMATIONAL_QUESTION',
+        conversationMode: 'CURRENT_PLAN_QUESTION',
+        parameters: {
+          question: text,
+          isBookingInquiry: true,
+          targetPlace,
+        },
+        isSimulation: false,
+        isQuestionOnly: true,
+        requiresClarification: false,
+        discussedPlace: targetPlace,
+        reasoning: `Inquiry regarding official ticket booking or website for ${targetPlace || 'attraction'}.`,
+      };
+    }
+
+    // -------------------------------------------------------------
     // Check 18: Cost & Budget Inquiries (Handled honestly without execution)
     // -------------------------------------------------------------
     const isBudgetOrCostQuery =

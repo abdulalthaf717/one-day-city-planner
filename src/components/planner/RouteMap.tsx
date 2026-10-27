@@ -126,6 +126,36 @@ export const RouteMap: React.FC<RouteMapProps> = ({
             <div style="font-size: 12px; color: #475569; line-height: 1.4;">
               <div>⏰ ${stop.arrivalTime} – ${stop.departureTime} (${stop.durationMinutes} min)</div>
             </div>
+            ${(() => {
+              const rawBookingUrl =
+                stop.actionLinks?.bookingUrl || stop.place?.actionLinks?.bookingUrl || stop.place?.bookingUrl;
+              const isBookingVerified =
+                stop.actionLinks?.bookingVerificationStatus === 'verified' ||
+                stop.place?.actionLinks?.bookingVerificationStatus === 'verified';
+              const verifiedBookingUrl = isBookingVerified && rawBookingUrl ? rawBookingUrl : undefined;
+
+              const rawWebsiteUrl =
+                stop.actionLinks?.websiteUrl || stop.place?.actionLinks?.websiteUrl || stop.place?.websiteUrl;
+              const verifiedWebsiteUrl =
+                rawWebsiteUrl && rawWebsiteUrl !== verifiedBookingUrl ? rawWebsiteUrl : undefined;
+
+              const directionsUrl =
+                stop.actionLinks?.directionsUrl ||
+                `https://www.google.com/maps/dir/?api=1&destination=${point[0]},${point[1]}`;
+
+              let linksHtml = '<div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px;">';
+              if (directionsUrl) {
+                linksHtml += `<a href="${directionsUrl}" target="_blank" rel="noopener noreferrer" style="font-size: 11px; font-weight: 600; padding: 3px 8px; background: #f1f5f9; color: #334155; border-radius: 6px; text-decoration: none; border: 1px solid #cbd5e1;">Directions ↗</a>`;
+              }
+              if (verifiedBookingUrl) {
+                linksHtml += `<a href="${verifiedBookingUrl}" target="_blank" rel="noopener noreferrer" style="font-size: 11px; font-weight: 700; padding: 3px 8px; background: #059669; color: #ffffff; border-radius: 6px; text-decoration: none;">Book Official Tickets ↗</a>`;
+              }
+              if (verifiedWebsiteUrl) {
+                linksHtml += `<a href="${verifiedWebsiteUrl}" target="_blank" rel="noopener noreferrer" style="font-size: 11px; font-weight: 600; padding: 3px 8px; background: #ffffff; color: #334155; border-radius: 6px; text-decoration: none; border: 1px solid #cbd5e1;">Website ↗</a>`;
+              }
+              linksHtml += '</div>';
+              return linksHtml;
+            })()}
           </div>
         `;
 

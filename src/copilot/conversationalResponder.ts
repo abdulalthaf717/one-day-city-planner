@@ -14,6 +14,7 @@ import {
   CopilotUserPreferences,
   PendingActionProposal,
 } from './types';
+import { lookupVerifiedAttractionLinks } from '../services/places/verifiedBookingRegistry';
 
 export interface AttractionProfile {
   canonicalName: string;
@@ -548,8 +549,16 @@ export function generatePlanOrEvaluativeReply(params: {
   discussedPlace?: string;
   pendingProposal?: PendingActionProposal;
   suggestedActions?: string[];
+  actionLinks?: {
+    googleMapsUrl?: string;
+    directionsUrl?: string;
+    websiteUrl?: string;
+    bookingUrl?: string;
+    bookingLabel?: string;
+    websiteLabel?: string;
+  };
 } {
-  const { rawQuestion, decision, context, preferences, conversationHistory } = params;
+  const { rawQuestion, decision, context, preferences, conversationHistory, itinerary } = params;
   const qLower = rawQuestion.toLowerCase().trim();
 
   // Check if pre-populated reply (e.g. place already in itinerary)
@@ -602,6 +611,154 @@ export function generatePlanOrEvaluativeReply(params: {
       },
       suggestedActions: [`Add ${placeName}`, 'Suggest improvements'],
     };
+  }
+
+  // 1.5. Ticket Booking & Official Website Inquiries (Case A, B, C)
+  const isBookingQuery =
+    Boolean(decision.parameters?.isBookingInquiry) ||
+    /\b(book tickets?|booking|book online|buy tickets?|online tickets?|reserve tickets?|where can i book|how (?:do|can) i book|can i book|official website|website link|official link)\b/i.test(
+      qLower
+    );
+
+  if (
+    isBookingQuery &&
+    !qLower.includes('how much') &&
+    !qLower.includes('budget') &&
+    !qLower.includes('make it cheaper')
+  ) {
+    // Determine target attraction
+    let targetName: string | undefined =
+      typeof decision.parameters?.targetPlace === 'string'
+        ? decision.parameters.targetPlace
+        : undefined;
+
+    // Check query text for mentioned profiles
+    if (!targetName) {
+      const profile = findAttractionProfile(rawQuestion);
+      if (profile) {
+        targetName = profile.canonicalName;
+      }
+    }
+
+    // Check stops in itinerary
+    let matchingStop = itinerary?.stops.find((s) => {
+      if (s.type === 'start' || s.type === 'end') return false;
+      const t = s.title.toLowerCase();
+      const n = (s.name || '').toLowerCase();
+      return (
+        (targetName && (t.includes(targetName.toLowerCase()) || targetName.toLowerCase().includes(t))) ||
+        qLower.includes(t) ||
+        (n && qLower.includes(n))
+      );
+    });
+
+    if (!targetName && matchingStop) {
+      targetName = matchingStop.title;
+    }
+
+    // Check if user referred to "this attraction" / "it" or last discussed place
+    if (!targetName && context.lastDiscussedPlace) {
+      targetName = context.lastDiscussedPlace;
+      matchingStop = itinerary?.stops.find(
+        (s) =>
+          s.title.toLowerCase().includes(targetName!.toLowerCase()) ||
+          targetName!.toLowerCase().includes(s.title.toLowerCase())
+      );
+    }
+
+    // If still not identified and only 1 visited stop in itinerary
+    if (!targetName && itinerary?.stops) {
+      const visited = itinerary.stops.filter((s) => s.type !== 'start' && s.type !== 'end');
+      if (visited.length === 1) {
+        matchingStop = visited[0];
+        targetName = visited[0].title;
+      }
+    }
+
+    if (targetName) {
+      // Lookup verified attraction link entry
+      const registryEntry = lookupVerifiedAttractionLinks({
+        placeId: matchingStop?.placeId || matchingStop?.id,
+        name: targetName,
+        coordinates: matchingStop?.place?.coordinates,
+      });
+
+      const officialBookingUrl =
+        registryEntry?.officialBookingUrl || matchingStop?.actionLinks?.bookingUrl;
+      const isBookingVerified =
+        registryEntry?.bookingVerificationStatus === 'verified' ||
+        matchingStop?.actionLinks?.bookingVerificationStatus === 'verified';
+
+      const websiteUrl =
+        registryEntry?.officialWebsiteUrl ||
+        matchingStop?.actionLinks?.websiteUrl ||
+        matchingStop?.place?.actionLinks?.websiteUrl ||
+        matchingStop?.place?.websiteUrl;
+
+      // Case A: Verified official booking URL
+      if (officialBookingUrl && isBookingVerified) {
+        return {
+          reply: `You can book official tickets for **${targetName}** directly through their verified portal: [Book Official Tickets](${officialBookingUrl}).\n\n*Note: A verified booking link provides direct access to the official portal, but does not guarantee real-time ticket availability or current slot capacity. We recommend verifying available time slots before visiting.*`,
+          discussedPlace: targetName,
+          actionLinks: {
+            bookingUrl: officialBookingUrl,
+            bookingLabel: 'Book Official Tickets',
+            websiteUrl: websiteUrl && websiteUrl !== officialBookingUrl ? websiteUrl : undefined,
+            websiteLabel: 'Website',
+          },
+          suggestedActions: [`Book tickets for ${targetName}`, 'Suggest improvements'],
+        };
+      }
+
+      // Case B: Website available, booking page not verified / only at counter
+      if (websiteUrl) {
+        return {
+          reply: `**${targetName}** has an official website at [Website](${websiteUrl}), but a verified direct online booking page is not available in our current data. Tickets are typically purchased in person at the venue's physical ticket counter upon arrival.`,
+          discussedPlace: targetName,
+          actionLinks: {
+            websiteUrl,
+            websiteLabel: 'Website',
+          },
+          suggestedActions: ['Suggest improvements', 'Can I fit one more place?'],
+        };
+      }
+
+      // Case C: No usable website or booking URL
+      return {
+        reply: `We do not have a verified website or direct online booking link for **${targetName}**. For this attraction, entry tickets (if required) must be obtained directly at the on-site ticket counter upon arrival.`,
+        discussedPlace: targetName,
+        suggestedActions: ['Suggest improvements', 'Can I fit one more place?'],
+      };
+    }
+
+    // If query was general ("Can I book tickets for my attractions?"), summarize plan stops
+    if (itinerary?.stops) {
+      const visited = itinerary.stops.filter((s) => s.type !== 'start' && s.type !== 'end');
+      if (visited.length > 0) {
+        const lines = visited.map((s) => {
+          const entry = lookupVerifiedAttractionLinks({
+            placeId: s.placeId || s.id,
+            name: s.title,
+            coordinates: s.place?.coordinates,
+          });
+          const bUrl = entry?.officialBookingUrl || s.actionLinks?.bookingUrl;
+          const wUrl = entry?.officialWebsiteUrl || s.actionLinks?.websiteUrl;
+
+          if (bUrl && entry?.bookingVerificationStatus === 'verified') {
+            return `• **${s.title}**: Online tickets available at [Official Booking](${bUrl}).`;
+          }
+          if (wUrl) {
+            return `• **${s.title}**: Official website available at [Website](${wUrl}) (Tickets sold at counter).`;
+          }
+          return `• **${s.title}**: Tickets available at the on-site counter.`;
+        });
+
+        return {
+          reply: `Here is the ticketing and website status for attractions in your itinerary:\n\n${lines.join('\n')}\n\n*Note: Ticket availability is not tracked live. Please check official portals or counters for same-day capacity.*`,
+          suggestedActions: ['Suggest improvements', 'Can I fit one more place?'],
+        };
+      }
+    }
   }
 
   // 2. Cost, Ticket Price & Budget Inquiries (Handled Honestly)

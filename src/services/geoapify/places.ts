@@ -45,6 +45,7 @@ import {
   hasReligiousInterest,
 } from './touristRelevance';
 import { evaluateTouristQualityGate } from './touristQualityGate';
+import { resolveAttractionActionLinks } from '../places/verifiedBookingRegistry';
 
 export interface CandidateDiscoveryRequest {
   city: string;
@@ -254,6 +255,22 @@ export class GeoapifyPlacesService extends GeoapifyClient implements IGeoapifyPl
       const latitude = p.lat ?? feat.geometry?.coordinates?.[1];
       const longitude = p.lon ?? feat.geometry?.coordinates?.[0];
 
+      // Safe provider website extraction (checking website, contact, and datasource)
+      const rawProviderWeb =
+        p.website ||
+        (p.contact as { website?: string } | undefined)?.website ||
+        (p as unknown as { datasource?: { raw?: { website?: string; 'contact:website'?: string } } })?.datasource?.raw?.website ||
+        (p as unknown as { datasource?: { raw?: { 'contact:website'?: string } } })?.datasource?.raw?.['contact:website'];
+
+      const resolvedLinks = resolveAttractionActionLinks({
+        placeId: p.place_id,
+        osmId: (p as unknown as { datasource?: { raw?: { osm_id?: number | string } } })?.datasource?.raw?.osm_id,
+        osmType: (p as unknown as { datasource?: { raw?: { osm_type?: string } } })?.datasource?.raw?.osm_type,
+        name: p.name || '',
+        coordinates: { lat: latitude, lng: longitude },
+        providerWebsite: rawProviderWeb,
+      });
+
       return {
         id: p.place_id || `loc_${latitude.toFixed(4)}_${longitude.toFixed(4)}`,
         name: p.name || 'Unnamed Attraction',
@@ -273,8 +290,13 @@ export class GeoapifyPlacesService extends GeoapifyClient implements IGeoapifyPl
         costSource: costResult.costSource,
         rating: undefined, // Geoapify free places v2 does not provide third-party star ratings
         ratingCount: undefined,
-        websiteUrl: p.website || undefined,
-        bookingUrl: undefined, // Never fabricate booking links
+        websiteUrl: resolvedLinks.websiteUrl,
+        websiteSource: resolvedLinks.websiteSource,
+        bookingUrl: resolvedLinks.officialBookingUrl,
+        officialBookingUrl: resolvedLinks.officialBookingUrl,
+        bookingVerificationStatus: resolvedLinks.bookingVerificationStatus,
+        bookingVerificationSource: resolvedLinks.bookingVerificationSource,
+        bookingVerificationDate: resolvedLinks.bookingVerificationDate,
         verificationStatus: (isVerified ? 'verified' : 'unverified') as VerificationStatus,
         source: 'geoapify',
         relevanceScore: touristClassification.touristRelevanceScore,
@@ -293,9 +315,16 @@ export class GeoapifyPlacesService extends GeoapifyClient implements IGeoapifyPl
           isEligibleForDiningSupport: qualityGate.isEligibleForDiningSupport,
         },
         actionLinks: {
-          directionsUrl: `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`,
-          websiteUrl: p.website || undefined,
-          bookingUrl: undefined,
+          directionsUrl: resolvedLinks.directionsUrl,
+          websiteUrl: resolvedLinks.websiteUrl,
+          websiteSource: resolvedLinks.websiteSource,
+          bookingUrl: resolvedLinks.officialBookingUrl,
+          officialBookingUrl: resolvedLinks.officialBookingUrl,
+          bookingVerificationStatus: resolvedLinks.bookingVerificationStatus,
+          bookingVerificationSource: resolvedLinks.bookingVerificationSource,
+          bookingVerificationDate: resolvedLinks.bookingVerificationDate,
+          bookingLabel: resolvedLinks.bookingLabel,
+          websiteLabel: resolvedLinks.websiteLabel,
         },
       };
     });
@@ -667,6 +696,12 @@ export class GeoapifyPlacesService extends GeoapifyClient implements IGeoapifyPl
       peopleCount: 1,
     });
 
+    const resolvedLinks = resolveAttractionActionLinks({
+      placeId: location.placeId,
+      name: location.name,
+      coordinates: location.coordinates,
+    });
+
     return {
       id: location.placeId || `img-${Date.now()}`,
       name: location.name,
@@ -685,6 +720,13 @@ export class GeoapifyPlacesService extends GeoapifyClient implements IGeoapifyPl
       cost: costRes.cost,
       estimatedCostPerPerson: costRes.cost.amountPerPerson || 0,
       costSource: costRes.costSource,
+      websiteUrl: resolvedLinks.websiteUrl,
+      websiteSource: resolvedLinks.websiteSource,
+      bookingUrl: resolvedLinks.officialBookingUrl,
+      officialBookingUrl: resolvedLinks.officialBookingUrl,
+      bookingVerificationStatus: resolvedLinks.bookingVerificationStatus,
+      bookingVerificationSource: resolvedLinks.bookingVerificationSource,
+      bookingVerificationDate: resolvedLinks.bookingVerificationDate,
       verificationStatus: 'verified',
       source: 'user_upload',
       addedViaImage: true,
@@ -702,9 +744,16 @@ export class GeoapifyPlacesService extends GeoapifyClient implements IGeoapifyPl
         isEligibleForDiningSupport: qualityGate.isEligibleForDiningSupport,
       },
       actionLinks: {
-        directionsUrl: `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-          location.name + ' ' + (location.address || '')
-        )}`,
+        directionsUrl: resolvedLinks.directionsUrl,
+        websiteUrl: resolvedLinks.websiteUrl,
+        websiteSource: resolvedLinks.websiteSource,
+        bookingUrl: resolvedLinks.officialBookingUrl,
+        officialBookingUrl: resolvedLinks.officialBookingUrl,
+        bookingVerificationStatus: resolvedLinks.bookingVerificationStatus,
+        bookingVerificationSource: resolvedLinks.bookingVerificationSource,
+        bookingVerificationDate: resolvedLinks.bookingVerificationDate,
+        bookingLabel: resolvedLinks.bookingLabel,
+        websiteLabel: resolvedLinks.websiteLabel,
       },
     };
   }
